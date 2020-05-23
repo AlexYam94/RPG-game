@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using RPG.Core;
+using RPG.Saving;
 
 namespace RPG.Movement
 {
@@ -60,6 +61,28 @@ namespace RPG.Movement
 
         public void Cancel(){
             navMeshAgent.isStopped=true;
+        }
+
+        public object CaptureState()
+        {
+            // return new SerializableVector3(transform.position);
+            Dictionary<String,object> state = new Dictionary<String,object>();
+            // state.Add("position",new SerializableVector3(transform.position));
+            // state.Add("rotation",new SerializableVector3(transform.eulerAngles));
+            return state;
+        }
+
+        public void RestoreState(object state)
+        {
+            // SerializableVector3 position = (SerializableVector3)state;
+            // gameObject.GetComponent<NavMeshAgent>().enabled=false;
+            // transform.position = position.ToVector();
+            // gameObject.GetComponent<NavMeshAgent>().enabled=true;
+            Dictionary<String, object> tempState = (Dictionary<String,object>)state;
+            gameObject.GetComponent<NavMeshAgent>().enabled=false;
+            // transform.position = ((SerializableVector3)tempState["position"]).ToVector();
+            // transform.eulerAngles = ((SerializableVector3)tempState["rotation"]).ToVector();
+            gameObject.GetComponent<NavMeshAgent>().enabled=true;
         }
     }
 }
