@@ -1,2 +1,10 @@
-Temp/*
-Library/*
+/Temp
+/Library
+Library/SourceAssetDB
+Library/ArtifactDB
+Library/SourceAssetDB
+Library/ScriptAssemblies/Assembly-CSharp-Editor.dll
+Library/ScriptAssemblies/Assembly-CSharp.dll
+Library/ScriptAssemblies/Assembly-CSharp.pdb
+Library/StateCache/Hierarchy/26e1e3-mainStage.json
+Library/StateCache/SceneView/89d4f2-mainStage.json
