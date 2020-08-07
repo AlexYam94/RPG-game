@@ -17,40 +17,44 @@ namespace RPG.Combat
 
         private void Awake()
         {
-            fighter = GameObject.FindGameObjectWithTag("Player").GetComponent<Fighter>();
             rt = GetComponent<RectTransform>();
-            barWidth = rt.sizeDelta.x;
         }
 
         // Start is called before the first frame update
         void Start()
         {
-
+            fighter = GameObject.FindGameObjectWithTag("Player").GetComponent<Fighter>();
+            barWidth = rt.sizeDelta.x;
         }
 
         // Update is called once per frame
-        public void UpdateHealthBar()
+        void Update()
         {
             Health health = fighter.GetTarget();
-            if(health != null){
-                showHealthBar();
-                print(health.gameObject.name);
-                Vector2 size = rt.sizeDelta;
-                size.x = barWidth * health.GetPercentage()/100;
-                rt.sizeDelta = size;
-            }{
-                hideHealthBar();
+            if (health != null)
+            {
+                if (health.IsDead())
+                {
+                    hideHealthBar();
+                }
+                else
+                {
+                    showHealthBar();
+                    Vector2 size = rt.sizeDelta;
+                    size.x = barWidth * health.GetPercentage() / 100;
+                    rt.sizeDelta = size;
+                }
             }
         }
 
-        public void showHealthBar(){
+        public void showHealthBar()
+        {
             GetComponent<Image>().enabled = true;
-            background.enabled = true;
         }
 
-        public void hideHealthBar(){
+        public void hideHealthBar()
+        {
             GetComponent<Image>().enabled = false;
-            background.enabled = false;
         }
     }
 }
