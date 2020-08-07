@@ -5,10 +5,11 @@ using RPG.Core;
 using RPG.Movement;
 using RPG.Saving;
 using RPG.Resources;
+using RPG.Stats;
 
 namespace RPG.Combat
 {
-    public class Fighter : MonoBehaviour, IAction, ISaveable
+    public class Fighter : MonoBehaviour, IAction, ISaveable, IModifierProvider
     {
         [SerializeField]
         [Range(0, 100)]
@@ -61,7 +62,7 @@ namespace RPG.Combat
             }
             else if (target)
             {
-                // GetComponent<Mover>().Cancel();
+                GetComponent<Mover>().Cancel();
                 AttackBehaviour();
             }
         }
@@ -89,16 +90,19 @@ namespace RPG.Combat
         {
             if (target == null) return;
             bool hit = new System.Random().Next(0, 100) < hitRate;
+            float damage = GetComponent<BaseStats>().GetStat(Stat.Damage);
             if (currentWeapon.hasProjectile())
             {
-                currentWeapon.LaunchProjectile(rightHandTransform, leftHandTransform, target, gameObject);
+                currentWeapon.LaunchProjectile(rightHandTransform, leftHandTransform, target, gameObject,damage);
             }
             else
             {
                 if (hit)
-                    target.TakeDamage(gameObject, currentWeapon.getDamage());
-                else
-                    print("MISS");
+                {
+                    target.TakeDamage(gameObject, damage);
+                }
+                // else
+                // print("MISS");
             }
         }
 
@@ -109,7 +113,7 @@ namespace RPG.Combat
 
         private bool GetIsInRange()
         {
-            return Vector3.Distance(transform.position, target.transform.position) <= currentWeapon.getRange(); ;
+            return Vector3.Distance(transform.position, target.transform.position) <= currentWeapon.GetRange(); ;
         }
 
         public void Attack(GameObject combatTarget)
@@ -161,6 +165,19 @@ namespace RPG.Combat
             string weaponName = (string)state;
             Weapon weapon = UnityEngine.Resources.Load<Weapon>(weaponName);
             EquipWeapon(weapon);
+        }
+
+        public IEnumerable<float> GetAdditiveModifiers(Stat stat)
+        {
+            if(stat == Stat.Damage){
+                yield return currentWeapon.GetDamage();
+            }
+        }
+
+        public IEnumerable<float> GetPercentageModifiers(Stat stat){
+            if(stat == Stat.Damage){
+                yield return currentWeapon.GetPercentageBonus();
+            }
         }
     }
 }
