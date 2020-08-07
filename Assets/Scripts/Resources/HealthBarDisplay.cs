@@ -13,20 +13,17 @@ namespace RPG.Resources
 
         private void Awake()
         {
-            health = GameObject.FindGameObjectWithTag("Player").GetComponent<Health>();
             rt = GetComponent<RectTransform>();
-            barWidth = rt.sizeDelta.x;
         }
 
         // Start is called before the first frame update
         void Start()
         {
-
+            health = GameObject.FindGameObjectWithTag("Player").GetComponent<Health>();
+            barWidth = rt.sizeDelta.x;
         }
 
-        // Update is called once per frame
-        public void UpdateHealthBar()
-        {
+        void Update(){
             Vector2 size = rt.sizeDelta;
             size.x = barWidth * health.GetPercentage()/100;
             rt.sizeDelta = size;
