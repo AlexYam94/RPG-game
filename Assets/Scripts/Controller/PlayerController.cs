@@ -23,12 +23,17 @@ namespace RPG.Control
         // Update is called once per frame
         void Update()
         {
+            if(Input.GetKeyDown(KeyCode.Space)){
+                GetComponent<ActionScheduler>().CancelCurrentAction();
+            }
             if(health.IsDead()) return;
-            if (!InteractWithCombat())
-                if (!InteractWithMovement())
-                    // print("Nothing");
+            if (!InteractWithCombat()){
+                // print("interact with combat return false");
+                if (!InteractWithMovement()){
+                    // print("interact with movement return false");
                     return;
-
+                }
+            }
         }
 
         private bool InteractWithCombat()
@@ -60,11 +65,12 @@ namespace RPG.Control
             bool hasHit = Physics.Raycast(GetMouseRay(), out hitInfo);
             if (hasHit)
             {
-                if (Input.GetMouseButtonDown(0) || Input.GetMouseButton(0))
+            
+                if (Input.GetMouseButton(0))
                 {
                     GetComponent<Mover>().StartMoveAction(hitInfo.point, 1f);
+                    return true;
                 }
-                return true;
             }
             return false;
         }

@@ -20,11 +20,14 @@ namespace RPG.Movement
         NavMeshAgent navMeshAgent;
         Health health;
 
+        private void Awake() {
+            navMeshAgent = GetComponent<NavMeshAgent>();
+            health = GetComponent<Health>();
+        }
+
         // Start is called before the first frame update
         void Start()
         {
-            navMeshAgent = GetComponent<NavMeshAgent>();
-            health = GetComponent<Health>();
         }
 
         // Update is called once per frame
@@ -42,7 +45,7 @@ namespace RPG.Movement
 
         private void UpdateAnimator()
         {
-            Vector3 velocity = GetComponent<NavMeshAgent>().velocity;
+            Vector3 velocity = navMeshAgent.velocity;
             Vector3 localVelocity = transform.InverseTransformDirection(velocity);
             float speed = localVelocity.z;
             GetComponent<Animator>().SetFloat("forwardSpeed", speed);
@@ -62,6 +65,10 @@ namespace RPG.Movement
 
         public void Cancel(){
             navMeshAgent.isStopped=true;
+            navMeshAgent.destination = transform.position;
+            navMeshAgent.SetDestination(gameObject.transform.position);
+            navMeshAgent.speed = 0;
+            navMeshAgent.velocity = Vector3.zero;
         }
 
         public object CaptureState()
@@ -80,10 +87,10 @@ namespace RPG.Movement
             // transform.position = position.ToVector();
             // gameObject.GetComponent<NavMeshAgent>().enabled=true;
             Dictionary<String, object> tempState = (Dictionary<String,object>)state;
-            gameObject.GetComponent<NavMeshAgent>().enabled=false;
+            navMeshAgent.enabled=false;
             transform.position = ((SerializableVector3)tempState["position"]).ToVector();
             // transform.eulerAngles = ((SerializableVector3)tempState["rotation"]).ToVector();
-            gameObject.GetComponent<NavMeshAgent>().enabled=true;
+            navMeshAgent.enabled=true;
             GetComponent<ActionScheduler>().CancelCurrentAction();
         }
     }

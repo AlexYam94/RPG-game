@@ -41,13 +41,16 @@ namespace RPG.Control
         readonly float chaseSpeed = 5f;
         readonly float patrolSpeed = 3f;
 
-        // Start is called before the first frame update
-        void Start()
-        {
+        private void Awake() {
             mover = GetComponent<Mover>();
             player = GameObject.FindWithTag("Player");
             fighter = GetComponent<Fighter>();
             health = GetComponent<Health>();
+        }
+
+        // Start is called before the first frame update
+        void Start()
+        {
             guardPostion = transform.position;
         }
 

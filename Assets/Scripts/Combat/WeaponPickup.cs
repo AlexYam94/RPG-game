@@ -13,7 +13,6 @@ namespace RPG.Combat
         float respawnTime = 3;
         private void OnTriggerEnter(Collider other)
         {
-            print("trigger enter weaponpickup");
             if (other.gameObject.tag == "Player")
             {
                 other.GetComponent<Fighter>().EquipWeapon(weapon);
