@@ -8,6 +8,7 @@ using RPG.Core;
 using RPG.Resources;
 using System;
 using UnityEngine.AI;
+using GameDevTV.Utils;
 
 namespace RPG.Control
 {
@@ -32,7 +33,7 @@ namespace RPG.Control
         Fighter fighter;
         Health health;
         GameObject player;
-        Vector3 guardPostion;
+        LazyValue<Vector3> guardPostion;
         int currentWaypointIndex = 0;
 
         float timeSinceLastSawPlayer = Mathf.Infinity;
@@ -46,12 +47,18 @@ namespace RPG.Control
             player = GameObject.FindWithTag("Player");
             fighter = GetComponent<Fighter>();
             health = GetComponent<Health>();
+            guardPostion = new LazyValue<Vector3>(GetGuardPosition);
+        }
+
+        private Vector3 GetGuardPosition()
+        {
+            return transform.position;
         }
 
         // Start is called before the first frame update
         void Start()
         {
-            guardPostion = transform.position;
+            guardPostion.ForceInit();
         }
 
         // Update is called once per frame
@@ -94,7 +101,7 @@ namespace RPG.Control
 
         private void PatroBehaviour()
         {
-            Vector3 nextPosition = guardPostion;
+            Vector3 nextPosition = guardPostion.value;
             if (patrolPath != null)
             {
                 if (AtWaypoint())
