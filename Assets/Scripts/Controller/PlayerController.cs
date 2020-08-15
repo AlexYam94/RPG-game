@@ -7,6 +7,7 @@ using RPG.Core;
 using RPG.Resources;
 using UnityEngine.AI;
 using System;
+using UnityEngine.EventSystems;
 
 namespace RPG.Control
 {
@@ -21,7 +22,8 @@ namespace RPG.Control
         enum CursorType{
             None,
             Movement,
-            Combat
+            Combat,
+            UI
         }
 
         // Start is called before the first frame update
@@ -58,7 +60,13 @@ namespace RPG.Control
             if(Input.GetKeyDown(KeyCode.Space)){
                 GetComponent<ActionScheduler>().CancelCurrentAction();
             }
-            if(health.IsDead()) return;
+            if(InteractWithUI()) {
+                return;
+            }
+            if(health.IsDead()){
+                SetCursor(CursorType.None);
+                return;
+            }
             if (!InteractWithCombat()){
                 // print("interact with combat return false");
                 if (!InteractWithMovement()){
@@ -67,6 +75,15 @@ namespace RPG.Control
                     return;
                 }
             }
+        }
+
+        private bool InteractWithUI()
+        {
+            if(EventSystem.current.IsPointerOverGameObject()){
+                SetCursor(CursorType.UI);
+                return true;
+            }
+            return false;
         }
 
         private bool InteractWithCombat()
