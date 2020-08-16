@@ -8,3 +8,30 @@ Library/ScriptAssemblies/Assembly-CSharp.dll
 Library/ScriptAssemblies/Assembly-CSharp.pdb
 Library/StateCache/Hierarchy/26e1e3-mainStage.json
 Library/StateCache/SceneView/89d4f2-mainStage.json
+*csproj
+/.vs
+/obj
+/ProjectSettings
+*zip
+*json
+*log
+*jpg
+*unitypackage
+*alf
+*sln
+*asset
+*png
+*unity
+*exr
+/Assets/Asset Packs
+/Assets/BOXOPHOBIC
+/Assets/BrokenVector
+/Assets/Game
+/Assets/Gizmos
+/Assets/Low Poly Water
+/Assets/Katana
+/Assets/SimpleFX
+/Assets/Standard Assets
+/GameDev.tv Weapons
+/Assets/fonts
+*meta
