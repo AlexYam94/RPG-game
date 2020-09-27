@@ -2,7 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using RPG.Resources;
+using RPG.Attributes;
+using UnityEngine.Events;
 
 namespace RPG.Combat
 {
@@ -20,6 +21,7 @@ namespace RPG.Combat
         GameObject[] destroyOnHit = null;
         [SerializeField]
         float lifeAfterImpact = 1;
+        [SerializeField] UnityEvent onHit;
 
         Health target = null;
         GameObject instigator = null;
@@ -48,6 +50,7 @@ namespace RPG.Combat
 
             if (health != target) return;
 
+            onHit.Invoke();
             if (hitEffect != null)
             {
                 GameObject.Instantiate(hitEffect, GetAimLocation(), transform.rotation);
