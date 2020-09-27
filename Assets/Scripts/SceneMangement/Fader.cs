@@ -9,6 +9,7 @@ namespace RPG.SceneManagement
         private int time;
 
         CanvasGroup canvasGroup;
+        Coroutine currentActiveFade = null;
 
         // private int deltaTime = time/Time.deltaTime;
 
@@ -21,28 +22,34 @@ namespace RPG.SceneManagement
             canvasGroup.alpha = 1;
         }
 
-        public IEnumerator FadeOut(float time){
+        public Coroutine Fade(float target, float time){
+            if(currentActiveFade !=null){
+                StopCoroutine(currentActiveFade);
+            }
+            currentActiveFade = StartCoroutine(FadeRoutine(0f,time));
+            return currentActiveFade;
+        }
+
+        public Coroutine FadeOut(float time){
+            return Fade(1,time);
+        }
+
+        public Coroutine FadeIn(float time){
+            return Fade(0,time);
+        }
+
+        private IEnumerator FadeRoutine(float target, float time){
             //number of frames = time/Time.deltaTime
             //deltaAlpha = 1/number of frames
             //           = Time.deltaTime/time
-            while(canvasGroup.alpha<1){ //alpha is not 1
+            while(Mathf.Approximately(canvasGroup.alpha, target)){ //alpha is not 1
                 //moving alpha toward 1
-                canvasGroup.alpha+=Time.deltaTime/time;
+                canvasGroup.alpha=Mathf.MoveTowards(canvasGroup.alpha, target, Time.deltaTime/time);
                 //ask coroutine to wait for 1 frame
                 yield return null;
             }
         }
 
-        public IEnumerator FadeIn(float time){
-            //number of frames = time/Time.deltaTime
-            //deltaAlpha = 1/number of frames
-            //           = Time.deltaTime/time
-            while(canvasGroup.alpha>0){ //alpha is not 1
-                //moving alpha toward 1
-                canvasGroup.alpha-=Time.deltaTime/time;
-                //ask coroutine to wait for 1 frame
-                yield return null;
-            }
-        }
+
     }
 }
