@@ -4,6 +4,7 @@ using System.Collections;
 using UnityEngine.AI;
 using RPG.Core;
 using RPG.Saving;
+using RPG.Control;
 
 namespace RPG.SceneManagement
 {
@@ -32,8 +33,11 @@ namespace RPG.SceneManagement
         [SerializeField]
         float fadeWaitTime = 1f;
 
+        PlayerController player = null;
+
         private void Start()
-        {
+        { 
+            player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
         }
 
         private void OnTriggerEnter(Collider other)
@@ -52,12 +56,19 @@ namespace RPG.SceneManagement
                 Debug.LogError("Scene to load not set");
                 yield break;
             }
+            player.enabled = false;
             Fader fader = FindObjectOfType<Fader>();
+            
             yield return fader.FadeOut(fadeOutTime);
             DontDestroyOnLoad(this.gameObject);
+
             SavingWrapper wrapper = GameObject.FindObjectOfType<SavingWrapper>();
             wrapper.Save();
             yield return SceneManager.LoadSceneAsync(sceneToLoad);
+
+            PlayerController newPlayerController = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
+            newPlayerController.enabled = false;
+
             wrapper.Load();
 
             Portal otherPortal = GetOtherPortal();
@@ -68,6 +79,8 @@ namespace RPG.SceneManagement
 
             yield return new WaitForSeconds(fadeWaitTime);
             yield return fader.FadeIn(fadeInTime);
+
+            newPlayerController.enabled = true;
 
             Destroy(this.gameObject);
         }
