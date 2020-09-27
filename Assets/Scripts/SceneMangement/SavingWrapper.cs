@@ -16,9 +16,9 @@ namespace RPG.SceneManagement
 
         private IEnumerator LoadLastScene() {
             yield return GetComponent<SavingSystem>().LoadLastScene(defaultSaveFile);
-            Fader fader = FindObjectOfType<Fader>();
-            fader.FadeOutImmediate();
-            yield return fader.FadeIn(2f);
+            // Fader fader = FindObjectOfType<Fader>();
+            // fader.FadeOutImmediate();
+            // yield return fader.FadeIn(2f);
         }
 
         private void Update() {
@@ -31,7 +31,7 @@ namespace RPG.SceneManagement
                 Fader fader = FindObjectOfType<Fader>();
                 fader.FadeOutImmediate();
                 Load();
-                StartCoroutine(fader.FadeIn(fadeInTime));
+                fader.Fade(0,fadeInTime);
             }
             else if(Input.GetKeyDown(KeyCode.Delete))
             {
