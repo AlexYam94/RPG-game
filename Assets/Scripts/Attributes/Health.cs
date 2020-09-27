@@ -7,12 +7,18 @@ using RPG.Core;
 using RPG.Combat;
 using System;
 using GameDevTV.Utils;
+using UnityEngine.Events;
 
-namespace RPG.Resources
+namespace RPG.Attributes
 {
     public class Health : MonoBehaviour, ISaveable
     {
         [SerializeField][Range(0, 100)] float healthRegenerationOnLevelUp = 1f;
+        [SerializeField] TakeDamageEvent takeDamage;
+        [SerializeField] UnityEvent onDie;
+
+        [System.Serializable]
+        public class TakeDamageEvent : UnityEvent<float>{};
 
         LazyValue<float> healthPoints;
         bool isDead;
@@ -54,8 +60,11 @@ namespace RPG.Resources
                 if(exp!=null){
                     exp.GainExperince(GetComponent<BaseStats>().GetStat(Stat.ExperienceReward));
                 }
+                onDie.Invoke();
                 Die();
             }
+            
+            takeDamage.Invoke(damage);
             currentPercentage = GetPercentage();
         }
 
@@ -69,6 +78,10 @@ namespace RPG.Resources
 
         public float GetPercentage(){
             return healthPoints.value/GetComponent<BaseStats>().GetStat(Stat.Health) * 100;
+        }
+
+        public float GetFraction(){
+            return healthPoints.value/GetComponent<BaseStats>().GetStat(Stat.Health);
         }
 
         private void Die()

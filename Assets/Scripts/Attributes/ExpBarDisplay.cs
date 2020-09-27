@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using RPG.Resources;
+using RPG.Attributes;
 using RPG.Stats;
 using UnityEngine;
 
@@ -17,12 +17,11 @@ public class ExpBarDisplay : MonoBehaviour
         experience = GameObject.FindGameObjectWithTag("Player").GetComponent<Experience>();
         rt = GetComponent<RectTransform>();
         barWidth = rt.sizeDelta.x;
-        expToLevelUp = GetBarMaxNum();
     }
 
-    // private void Start() {
-    //     experience.onExperienceGained += UpdateExpBar;
-    // }
+    private void Start() {
+        expToLevelUp = GetBarMaxNum(); 
+    }
 
     public void UpdateExpBar(float experiencePoint)
     {
