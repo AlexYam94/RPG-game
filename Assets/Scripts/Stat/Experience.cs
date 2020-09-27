@@ -1,6 +1,6 @@
 using RPG.Saving;
 using UnityEngine;
-using RPG.Resources;
+using RPG.Attributes;
 using System;
 
 namespace RPG.Stats
