@@ -14,16 +14,12 @@ namespace RPG.Control
 {
     public class AIController : MonoBehaviour
     {
-        [SerializeField]
-        float chaseDistance = 5f;
-        [SerializeField]
-        float suspicionTime = 3f;
-        [SerializeField]
-        PatrolPath patrolPath;
-        [SerializeField]
-        float waypointTolerance = 1f;
-        [SerializeField]
-        float waypointDewllTime = 3f;
+        [SerializeField] float chaseDistance = 5f;
+        [SerializeField] float suspicionTime = 3f;
+        [SerializeField] float agroCooldownTime = 5f;
+        [SerializeField] PatrolPath patrolPath;
+        [SerializeField] float waypointTolerance = 1f;
+        [SerializeField] float waypointDewllTime = 3f;
 
         [SerializeField]
         [Range(0,1)]
@@ -38,7 +34,7 @@ namespace RPG.Control
 
         float timeSinceLastSawPlayer = Mathf.Infinity;
         float timeSinceArriveAtWaypoint = Mathf.Infinity;
-
+        private float timeSinceAggrevated = Mathf.Infinity;
         readonly float chaseSpeed = 5f;
         readonly float patrolSpeed = 3f;
 
@@ -74,7 +70,7 @@ namespace RPG.Control
             // }
             if (health.IsDead()) return;
 
-            if (InAttackRangeOfPlayer() && fighter.CanAttack(player))
+            if (IsAggrevated() && fighter.CanAttack(player))
             {
                 GetComponent<NavMeshAgent>().speed = chaseSpeed;
                 AttackBehaviour();
@@ -93,10 +89,16 @@ namespace RPG.Control
 
         }
 
+        public void Aggrevate(){
+            timeSinceAggrevated = 0f;
+        }
+
         private void UpdateTimers()
         {
             timeSinceLastSawPlayer += Time.deltaTime;
             timeSinceArriveAtWaypoint += Time.deltaTime;
+            timeSinceAggrevated += timeSinceAggrevated;
+            
         }
 
         private void PatroBehaviour()
@@ -157,10 +159,10 @@ namespace RPG.Control
             Gizmos.DrawWireSphere(transform.position, chaseDistance);
         }
 
-        private bool InAttackRangeOfPlayer()
+        private bool IsAggrevated()
         {
             float distanceToPlayer = Vector3.Distance(player.transform.position, transform.position);
-            return distanceToPlayer <= chaseDistance;
+            return (distanceToPlayer <= chaseDistance) || (timeSinceAggrevated < agroCooldownTime);
         }
     }
 }
