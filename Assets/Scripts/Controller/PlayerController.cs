@@ -14,14 +14,9 @@ namespace RPG.Control
 
     public class PlayerController : MonoBehaviour
     {
-        [SerializeField]
-        CursorMapping[] cursorMappings = null;
+        [SerializeField] CursorMapping[] cursorMappings = null;
 
-        [SerializeField]
-        float maxNavMeshProjectionDistance = 1f;
-
-        [SerializeField]
-        float maxNavPathLength = 40f;
+        [SerializeField] float maxNavMeshProjectionDistance = 1f;
 
         Health health;
 
@@ -120,25 +115,15 @@ namespace RPG.Control
             }
             target = navMeshHit.position;
 
-            NavMeshPath path = new NavMeshPath();
-            if(!NavMesh.CalculatePath(transform.position, target, NavMesh.AllAreas, path)) return false;
-            if(path.status != NavMeshPathStatus.PathComplete) return false;
-            if(GetPathLength(path) > maxNavPathLength) return false;
-            
-
-            return true;
+            // NavMeshPath path = new NavMeshPath();
+            // if(!NavMesh.CalculatePath(transform.position, target, NavMesh.AllAreas, path)) return false;
+            // if(path.status != NavMeshPathStatus.PathComplete) return false;
+            // if(GetPathLength(path) > maxNavPathLength) return false;
+        
+            return GetComponent<Mover>().CanMoveTo(target);
         }
 
-        private float GetPathLength(NavMeshPath path)
-        {
-            float total = 0;
-            Vector3[] corners = path.corners;
-            if(corners.Length<2) return total;
-            for(int i=0; i<corners.Length-1;i++){
-                total += Vector3.Distance(corners[i],corners[i+1]);
-            }
-            return total;
-        }
+        
 
         private bool MoveToCursor()
         {
@@ -148,6 +133,7 @@ namespace RPG.Control
             bool hasHit = RaycastNavMesh(out target);
             if (hasHit)
             {
+                if(!GetComponent<Mover>().CanMoveTo(target)) return false;
 
                 if (Input.GetMouseButton(0))
                 {
