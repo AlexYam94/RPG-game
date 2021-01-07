@@ -14,11 +14,14 @@ namespace RPG.Attributes
         {
             if(foreground!=null){
                 float fraction = healthComponent.GetFraction();
+                foreground.localScale = new Vector3(fraction,1,1);
                 if(Mathf.Approximately(fraction,0)||Mathf.Approximately(fraction,1)){
                     canvas.enabled = false;
                     return;
+                }else{
+                    canvas.enabled = true;
                 }
-                foreground.localScale = new Vector3(fraction,1,1);
+                // foreground.localScale = new Vector3(fraction,1,1);
             }
         }
     }
