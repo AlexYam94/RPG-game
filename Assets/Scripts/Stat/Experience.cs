@@ -2,6 +2,7 @@ using RPG.Saving;
 using UnityEngine;
 using RPG.Attributes;
 using System;
+using UnityEngine.UI;
 
 namespace RPG.Stats
 {
@@ -18,7 +19,8 @@ namespace RPG.Stats
 
         public void GainExperince(float experience){
             experiencePoints += experience;
-            GameObject.Find("Exp Bar").GetComponent<ExpBarDisplay>().UpdateExpBar(experience);
+            // GameObject.Find("Exp Bar").GetComponent<ExpBarDisplay>().UpdateExpBar(experience);
+            GameObject.Find("Experience").GetComponent<ExpBarDisplay>().UpdateExpBar(experience);
             onExperienceGained();
         }
 
