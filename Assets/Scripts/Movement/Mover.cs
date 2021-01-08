@@ -39,8 +39,10 @@ namespace RPG.Movement
             //    MoveToCursor();
             //}
             if(health.IsDead())
-                navMeshAgent.enabled = false;
-            UpdateAnimator();
+                if(navMeshAgent!=null)
+                    navMeshAgent.enabled = false;
+            if(this.gameObject.name!="Player")
+                UpdateAnimator();
         }
 
         private void UpdateAnimator()
@@ -57,6 +59,7 @@ namespace RPG.Movement
         }
 
         public bool CanMoveTo(Vector3 destination){
+            if(navMeshAgent!=null) return false;
             NavMeshPath path = new NavMeshPath();
             if(!NavMesh.CalculatePath(transform.position, destination, NavMesh.AllAreas, path)) return false;
             if(path.status != NavMeshPathStatus.PathComplete) return false;
@@ -66,12 +69,14 @@ namespace RPG.Movement
 
         public void MoveTo(Vector3 destination, float speedFraction)
         {
+            if(navMeshAgent==null) return;
             navMeshAgent.destination = destination;
             navMeshAgent.speed = maxSpeed * Mathf.Clamp01(speedFraction);
             navMeshAgent.isStopped=false;
         }
 
         public void Cancel(){
+            if(navMeshAgent!=null) return;
             navMeshAgent.isStopped=true;
             navMeshAgent.destination = transform.position;
             navMeshAgent.SetDestination(gameObject.transform.position);
@@ -98,7 +103,7 @@ namespace RPG.Movement
             navMeshAgent.enabled=false;
             transform.position = ((SerializableVector3)tempState["position"]).ToVector();
             // transform.eulerAngles = ((SerializableVector3)tempState["rotation"]).ToVector();
-            navMeshAgent.enabled=true;
+            // navMeshAgent.enabled=true;
             GetComponent<ActionScheduler>().CancelCurrentAction();
         }
         
