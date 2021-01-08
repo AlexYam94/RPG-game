@@ -22,11 +22,11 @@ namespace RPG.SceneManagement
         }
 
         private void Update() {
-            if(Input.GetKeyDown(KeyCode.S))
+            if(Input.GetKeyDown(KeyCode.F5))
             {
                 Save();
             }
-            else if(Input.GetKeyDown(KeyCode.L))
+            else if(Input.GetKeyDown(KeyCode.F9))
             {
                 Fader fader = FindObjectOfType<Fader>();
                 fader.FadeOutImmediate();
