@@ -9,6 +9,7 @@ using RPG.Attributes;
 using System;
 using UnityEngine.AI;
 using GameDevTV.Utils;
+using RPG.Stats;
 
 namespace RPG.Control
 {
@@ -17,14 +18,20 @@ namespace RPG.Control
         [SerializeField] float chaseDistance = 5f;
         [SerializeField] float suspicionTime = 3f;
         [SerializeField] float agroCooldownTime = 5f;
-        [SerializeField] PatrolPath patrolPath;
+        [SerializeField] PatrolPath patrolPath = null;
         [SerializeField] float waypointTolerance = 1f;
         [SerializeField] float waypointDewllTime = 3f;
+        [SerializeField] float shoutDistance = 4;
+        [SerializeField] AggressiveLevel aggressiveLevelDict;
+        [SerializeField] AggressiveLevel.AggressiveLevelEnum aggressiveLevel;
+        [SerializeField] float backwardDistance = .1f;
+        [SerializeField] float backwardSpeed = .1f;
 
         [SerializeField]
         [Range(0,1)]
         float patrolSpeedFraction = 0.6f;
-
+        Stamina stamina;
+        NavMeshAgent navMeshAgent;
         Mover mover;
         Fighter fighter;
         Health health;
@@ -43,6 +50,8 @@ namespace RPG.Control
             player = GameObject.FindWithTag("Player");
             fighter = GetComponent<Fighter>();
             health = GetComponent<Health>();
+            stamina = GetComponent<Stamina>();
+            navMeshAgent = GetComponent<NavMeshAgent>();
             guardPostion = new LazyValue<Vector3>(GetGuardPosition);
         }
 
@@ -70,10 +79,25 @@ namespace RPG.Control
             // }
             if (health.IsDead()) return;
 
-            if (IsAggrevated() && fighter.CanAttack(player))
+            if (IsAggrevated())
             {
-                GetComponent<NavMeshAgent>().speed = chaseSpeed;
-                AttackBehaviour();
+                transform.LookAt(player.transform);
+                navMeshAgent.speed = chaseSpeed;
+                Debug.Log(gameObject.name);
+                Debug.Log("Stamina remain: " + stamina.GetPercentage());
+                if(stamina.GetPercentage()<=aggressiveLevelDict.lookUp(aggressiveLevel))
+                {
+                    Debug.Log("cp1");
+                    //set destination to self?
+                    SetNavMeshAgentZVelocity(-1);
+                    mover.MoveTo(transform.position - (transform.forward * backwardDistance),backwardSpeed);
+                }
+                else if(fighter.CanAttack(player)){
+                    Debug.Log("cp2");
+                    AttackBehaviour();
+                }else{
+                    mover.MoveTo(player.transform.position,1f);
+                }
             }
             else if (IsSuspicious())
             {
@@ -89,6 +113,13 @@ namespace RPG.Control
 
         }
 
+        private void SetNavMeshAgentZVelocity(float z)
+        {
+            Vector3 velocity = navMeshAgent.velocity;
+            velocity.z = z;
+            navMeshAgent.velocity = velocity;
+        }
+
         public void Aggrevate(){
             timeSinceAggrevated = 0f;
         }
@@ -97,7 +128,7 @@ namespace RPG.Control
         {
             timeSinceLastSawPlayer += Time.deltaTime;
             timeSinceArriveAtWaypoint += Time.deltaTime;
-            timeSinceAggrevated += timeSinceAggrevated;
+            timeSinceAggrevated += Time.deltaTime;
             
         }
 
@@ -140,6 +171,18 @@ namespace RPG.Control
         {
             timeSinceLastSawPlayer = 0;
             fighter.Attack(player);
+
+            AggrevateNearbyEnemies();
+        }
+
+        private void AggrevateNearbyEnemies()
+        {
+            RaycastHit[] hits = Physics.SphereCastAll(transform.position, shoutDistance, Vector3.up,0);
+            foreach(RaycastHit hit in hits){
+                AIController ai = hit.collider.GetComponent<AIController>();
+                if(ai!=null)
+                    ai.Aggrevate();
+            }
         }
 
         private void SuspicionBehaviour()
@@ -164,6 +207,20 @@ namespace RPG.Control
             float distanceToPlayer = Vector3.Distance(player.transform.position, transform.position);
             return (distanceToPlayer <= chaseDistance) || (timeSinceAggrevated < agroCooldownTime);
         }
+
+        // public void EnableWeaponTrigger(){
+        //     print("Enable weapon trigger");
+        //     fighter.EnableTrigger();
+        //     // agent.SetDestination(transform.position);
+        //     // agent.enabled = false;
+        // }
+
+        // public void DisableWeaponTrigger(){
+        //     print("Disable weapon trigger");
+        //     fighter.DisableTrigger();
+        //     // agent.enabled = true;
+        // }
+
     }
 }
 
