@@ -21,6 +21,7 @@ namespace RPG.Attributes
         [SerializeField] UnityEvent onDie;
         [SerializeField] float blockingMultiplier = .5f;
         [SerializeField] float damageTakenCooldownTime = .5f;
+        [SerializeField][Range(0, 100)] float healthRegen = 100f;
         public Dictionary<GameObject, float> damageTakenCooldown = null;
         public List<GameObject> targetsToNotify = null;
 
@@ -61,6 +62,11 @@ namespace RPG.Attributes
         private void Update() {
             currentPercentage = GetFraction();
             UpdateDamageTakenCooldown();
+            Heal(healthRegen);
+            List<GameObject> keys = new List<GameObject>(damageTakenCooldown.Keys);
+            foreach(var key in keys){
+                Debug.Log(damageTakenCooldown[key]);
+            }
         }
 
         private void UpdateHealth()
@@ -68,7 +74,6 @@ namespace RPG.Attributes
             float nextHealth = GetComponent<BaseStats>().GetStat(Stat.Health);
             float percentage = Mathf.Clamp(currentPercentage,0,100);
             float tempHealth = nextHealth * (percentage + healthRegenerationOnLevelUp/100);
-
             // float tempHealth = GetComponent<BaseStats>().GetStat(Stat.Health) * (Mathf.Clamp(currentPercentage,0,100) + healthRegenerationOnLevelUp)/100;
             healthPoints.value = Mathf.Clamp(tempHealth,tempHealth,nextHealth);
         }
@@ -76,7 +81,7 @@ namespace RPG.Attributes
         private void UpdateDamageTakenCooldown(){
             List<GameObject> keys = new List<GameObject>(damageTakenCooldown.Keys);
             foreach(var key in keys){
-                damageTakenCooldown[key] = Mathf.Max(damageTakenCooldown[key]-Time.deltaTime,0);
+                damageTakenCooldown[key] = Mathf.Max(damageTakenCooldown[key] - Time.deltaTime,0);
             }
         }
 
@@ -88,31 +93,31 @@ namespace RPG.Attributes
         {
             if (isDead) return;
             instigator.GetComponent<Health>().AddTargetToNotify(gameObject);
-            if(damageTakenCooldown.ContainsKey(instigator)){
+            lock(damageTakenCooldown){
+                if(!damageTakenCooldown.ContainsKey(instigator)){
+                    damageTakenCooldown.Add(instigator, damageTakenCooldownTime);
+                }
                 if(damageTakenCooldown[instigator]>0){
                     return;
-                }
-            }else{
-                damageTakenCooldown.Add(instigator, damageTakenCooldownTime);
-            }
-            if(gameObject.tag == "Player"){
-                if(isInvulnerable){
-                    print("player is Invulnerable");
-                    return;
-                }else if(gameObject.GetComponent<PlayerController>().IsBlocking()){
-                    Vector3 direction = instigator.transform.position - transform.position;
-                    Debug.DrawRay(transform.position, direction, Color.green);
-                    float angle = Vector3.Angle(direction, transform.forward);
-                    Debug.Log("Angle: " + angle); 
-                    if(angle <= Util.GetBlockingAngle(gameObject)/2){
-                        damage *= blockingMultiplier;
+                }else{
+                    damageTakenCooldown[instigator] = damageTakenCooldownTime;
+                    if(gameObject.tag == "Player"){
+                        if(isInvulnerable){
+                            return;
+                        }else if(gameObject.GetComponent<PlayerController>().IsBlocking()){
+                            Vector3 direction = instigator.transform.position - transform.position;
+                            float angle = Vector3.Angle(direction, transform.forward);
+                            if(angle <= Util.GetBlockingAngle(gameObject)/2){
+                                damage *= blockingMultiplier;
+                            }
+                        }
                     }
+                    healthPoints.value = Mathf.Max(healthPoints.value - damage, 0);
+                    CheckDeath(instigator);
+
+                    takeDamage.Invoke(damage);
                 }
             }
-            healthPoints.value = Mathf.Max(healthPoints.value - damage, 0);
-            CheckDeath(instigator);
-
-            takeDamage.Invoke(damage);
         }
 
         private void CheckDeath(GameObject instigator)
@@ -186,9 +191,16 @@ namespace RPG.Attributes
             isInvulnerable = target;
         }
 
+        public float GetInstigatorDamageCooldown(GameObject key){
+            if(!damageTakenCooldown.ContainsKey(key))
+                return 0;
+            return damageTakenCooldown[key];
+        }
+
         public void RemoveInstigator(GameObject key){
             damageTakenCooldown.Remove(key);
         }
+
 
         public void AddTargetToNotify(GameObject target){
             if(!targetsToNotify.Contains(target)){

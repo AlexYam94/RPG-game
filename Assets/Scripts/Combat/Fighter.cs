@@ -9,6 +9,7 @@ using RPG.Stats;
 using GameDevTV.Utils;
 using System;
 using RPG.Tool;
+using Sirenix.OdinInspector;
 
 namespace RPG.Combat
 {
@@ -119,6 +120,7 @@ namespace RPG.Combat
                 if (target == null) return;
                 if (!currentWeapon.value.GetCanTrigger()) return;
                 if (target != other.gameObject.GetComponent<Health>()) return;
+                if (target.GetInstigatorDamageCooldown(gameObject) > 0) return;
                 bool hit = new System.Random().Next(0, 100) < hitRate;
                 float damage = GetComponent<BaseStats>().GetStat(Stat.Damage);
 
@@ -269,14 +271,15 @@ namespace RPG.Combat
             }
         }
 
-        public void EnableTrigger(){
-            currentWeaponConfig.EnableTrigger();
-        }
+        // public void EnableTrigger(){
+        //     currentWeaponConfig.EnableTrigger();
+        // }
 
-        public void DisableTrigger(){
-            currentWeaponConfig.DisableTrigger();
-        }
+        // public void DisableTrigger(){
+        //     currentWeaponConfig.DisableTrigger();
+        // }
 
+        [Button]
         public void EnableWeaponTrigger(){
             currentWeapon.value.EnableTrigger();
             // agent.SetDestination(transform.position);
