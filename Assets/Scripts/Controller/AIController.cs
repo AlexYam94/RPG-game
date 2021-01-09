@@ -83,17 +83,13 @@ namespace RPG.Control
             {
                 transform.LookAt(player.transform);
                 navMeshAgent.speed = chaseSpeed;
-                Debug.Log(gameObject.name);
-                Debug.Log("Stamina remain: " + stamina.GetPercentage());
                 if(stamina.GetPercentage()<=aggressiveLevelDict.lookUp(aggressiveLevel))
                 {
-                    Debug.Log("cp1");
                     //set destination to self?
-                    SetNavMeshAgentZVelocity(-1);
+                    // SetNavMeshAgentZVelocity(-1);
                     mover.MoveTo(transform.position - (transform.forward * backwardDistance),backwardSpeed);
                 }
                 else if(fighter.CanAttack(player)){
-                    Debug.Log("cp2");
                     AttackBehaviour();
                 }else{
                     mover.MoveTo(player.transform.position,1f);
