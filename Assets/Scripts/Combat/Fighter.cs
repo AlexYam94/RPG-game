@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using RPG.Core;
 using RPG.Movement;
-using RPG.Saving;
 using RPG.Attributes;
 using RPG.Stats;
 using GameDevTV.Utils;
 using System;
 using RPG.Tool;
 using Sirenix.OdinInspector;
+using GameDevTV.Saving;
+using GameDevTV.Inventories;
 
 namespace RPG.Combat
 {
@@ -27,22 +28,37 @@ namespace RPG.Combat
         [SerializeField] WeaponConfig defaultWeapon = null;
         
         [SerializeField] string defaultWeaponName = "Unarmed";
-        [Range(1,3)][SerializeField] float attackSpeed = 1f;
+        [Range(0,3)][SerializeField] float attackSpeed = 1f;
+
+        [SerializeField] float maxTimeGapBetweenAttacks =2f;
+
+        [SerializeField] int maxNumberOfAttack = 3;
 
         float timeSinceAttack = Mathf.Infinity;
         Health target;
         WeaponConfig currentWeaponConfig = null;
         LazyValue<Weapon> currentWeapon;
+        LazyValue<Weapon> currentSubWeapon;
         Stamina stamina = null;
         private bool isAttacking = false;
         float attackTime = 0f;
         Animator anim = null;
+        Mover mover = null;
+        int numberOfAttack = 0;
+        int tempMaxNumberOfAttack = 1;
+        Equipment equipment;
+        
 
         private void Awake() {
             currentWeapon = new LazyValue<Weapon>(SetupDefaultWeapon);
             currentWeaponConfig = defaultWeapon;
             stamina = GetComponent<Stamina>();
             anim = GetComponent<Animator>();
+            mover = GetComponent<Mover>();
+            equipment = GetComponent<Equipment>();
+            if(equipment) {
+                equipment.equipmentUpdated += UpdateWeapon;
+            }
         }
 
         private Weapon SetupDefaultWeapon()
@@ -59,23 +75,30 @@ namespace RPG.Combat
         // Update is called once per frame
         void Update()
         {
-            GetComponent<Animator>().SetFloat("attackSpeed", attackSpeed);
+            anim.SetFloat("attackSpeed", attackSpeed);
             timeSinceAttack += Time.deltaTime;
+            // print("timeSinceAttack: " + timeSinceAttack);
+            if(numberOfAttack>maxNumberOfAttack||timeSinceAttack>maxTimeGapBetweenAttacks){
+                tempMaxNumberOfAttack = 1;
+                numberOfAttack = 0;
+                StopAttack();
+            }
             if (target == null) return;
             if (target.IsDead())
             {
-                GetComponent<Animator>().ResetTrigger("attack");
+                StopAttack();
                 target = null;
                 return;
             }
-
-            if (!GetIsInRange(target.transform)&&!isAttacking)
+            
+            // if (!GetIsInRange(target.transform)&&!isAttacking)
+            // {
+            //     mover.MoveTo(target.transform.position, 1f);
+            // }
+            // else if (target)
+            if (GetIsInRange(target.transform)&&!isAttacking&&target)
             {
-                GetComponent<Mover>().MoveTo(target.transform.position, 1f);
-            }
-            else if (target)
-            {
-                GetComponent<Mover>().Cancel();
+                mover.Cancel();
                 if(stamina.HasStaminaLeft()){
                     AttackBehaviour();
                 }
@@ -84,29 +107,92 @@ namespace RPG.Combat
 
         private void AttackBehaviour()
         {
-            if (timeBetweenAttacks < timeSinceAttack)
+            if (timeBetweenAttacks < timeSinceAttack&&numberOfAttack<maxNumberOfAttack)
             {
+                // if(timeSinceAttack < maxTimeGapBetweenAttacks){
+                    numberOfAttack = Mathf.Clamp(numberOfAttack+1,1,maxNumberOfAttack);
+                // }else{
+                    // numberOfAttack = 1;
+                // }
                 //This will trigger the Hit() event
                 transform.LookAt(target.transform);
                 StartCoroutine("TriggerAttack");
                 stamina.ConsumeStaminaOnce(20f,Stamina.StaminaType.attack);
                 timeSinceAttack = 0f;
-
+            }
+        }
+     
+        private void AttackBehaviour(float staminaToConsume)
+        {
+            if (timeBetweenAttacks < timeSinceAttack&&numberOfAttack<3)
+            {
+                // if(timeSinceAttack < maxTimeGapBetweenAttacks){
+                    numberOfAttack = Mathf.Clamp(numberOfAttack+1,1,3);
+                // }else{
+                    // numberOfAttack = 1;
+                // }
+                //This will trigger the Hit() event
+                StartCoroutine("TriggerAttack");
+                stamina.ConsumeStaminaOnce(staminaToConsume,Stamina.StaminaType.attack);
+                timeSinceAttack = 0f;
             }
         }
 
+        private IEnumerator TriggerSpecialAttack(){
+            // print(gameObject.name + ":  attack" + numberOfAttack);
+            anim.ResetTrigger("stopAttack");
+            anim.SetBool("isAttacking",true);
+            anim.SetTrigger("speicalAttack");
+            if(attackTime>0){
+                isAttacking=true;
+                yield return new WaitForSeconds(attackTime);
+                isAttacking=false;
+            }
+            // anim.SetTrigger("stopAttack");
+        }
+
         private IEnumerator TriggerAttack(){
-            GetComponent<Animator>().ResetTrigger("stopAttack");
-            GetComponent<Animator>().SetTrigger("attack");
-            isAttacking=true;
-            yield return new WaitForSeconds(attackTime);
-            isAttacking=false;
+            // print(gameObject.name + ": attack" + numberOfAttack);
+            anim.ResetTrigger("stopAttack");
+            anim.SetTrigger("attack"+numberOfAttack);
+            if(attackTime>0){
+                isAttacking=true;
+                yield return new WaitForSeconds(attackTime);
+                isAttacking=false;
+            }
+            anim.SetTrigger("stopAttack");
+        }
+        
+        public void Attack(GameObject combatTarget)
+        {
+            attackTime = Util.GetCurrentAnimationTime(attackTime,"attack",anim);
+            target = combatTarget.GetComponent<Health>();
+            mover.Cancel();
+            GetComponent<ActionScheduler>().StartAction(this);
+        }
+
+        public void Attack(float staminaToConsume)
+        {
+            attackTime = Util.GetCurrentAnimationTime(attackTime,"attack",anim)/4*2;
+            AttackBehaviour(staminaToConsume);
+        }
+
+        public void SpecialAttack(float staminaToConsume)
+        {
+            attackTime = Util.GetCurrentAnimationTime(attackTime,"attack",anim)/4*2;
+            StartCoroutine("TriggerSpecialAttack");
+            stamina.ConsumeStaminaOnce(staminaToConsume,Stamina.StaminaType.attack);
+            timeSinceAttack = 0f;
         }
 
         // private void TriggerAttack()
         // {
-        //     GetComponent<Animator>().ResetTrigger("stopAttack");
-        //     GetComponent<Animator>().SetTrigger("attack");
+        //     anim.ResetTrigger("stopAttack");
+        //     anim.SetTrigger("attack");
+        // }
+
+        // private void OnCollisionEnter(Collision other) {
+        //     print("collision enter: " + other.gameObject.name);    
         // }
 
         private void OnTriggerEnter(Collider other)
@@ -117,6 +203,11 @@ namespace RPG.Combat
             }
             else
             {
+                // if(other.gameObject.name=="Player"){
+                //     print("target: " + target.gameObject.name);
+                //     print("other: " + other.gameObject.name);
+                //     print("can trigger: " + currentWeapon.value.GetCanTrigger());
+                // }
                 if (target == null) return;
                 if (!currentWeapon.value.GetCanTrigger()) return;
                 if (target != other.gameObject.GetComponent<Health>()) return;
@@ -147,7 +238,6 @@ namespace RPG.Combat
 
         private void HandlePlayerHit(Collider other) {
             bool canTrigger = currentWeapon.value.GetCanTrigger();
-            // print("OnTriggerEnter canTrigger: " + canTrigger);
             if(!canTrigger){
                 return;
             }
@@ -160,8 +250,8 @@ namespace RPG.Combat
         }
 
         // //Animation effect
-        // void Hit()
-        // {
+        void Hit()
+        {
         //     if (target == null) return;
         //     bool hit = new System.Random().Next(0, 100) < hitRate;
         //     float damage = GetComponent<BaseStats>().GetStat(Stat.Damage);
@@ -183,7 +273,7 @@ namespace RPG.Combat
         //         // else
         //         // print("MISS");
         //     }
-        // }
+        }
 
         void Shoot()
         {
@@ -195,18 +285,13 @@ namespace RPG.Combat
             return Vector3.Distance(transform.position, targetTransform.position) <= currentWeaponConfig.GetRange(); ;
         }
 
-        public void Attack(GameObject combatTarget)
-        {
-            attackTime = Util.GetCurrentAnimationTime(attackTime,"attack",anim);
-            target = combatTarget.GetComponent<Health>();
-            GetComponent<ActionScheduler>().StartAction(this);
-        }
 
         public bool CanAttack(GameObject combatTarget)
         {
             if (combatTarget == null) {return false;}
             if (combatTarget == this.gameObject) {return false;}
-            if (!GetComponent<Mover>().CanMoveTo(combatTarget.transform.position)&&!GetIsInRange(combatTarget.transform)){ 
+            if (!GetIsInRange(combatTarget.transform)) return false;
+            if (!mover.CanMoveTo(combatTarget.transform.position)){ 
                 return false;
             }
             Health targetToTest = combatTarget.GetComponent<Health>();
@@ -216,30 +301,43 @@ namespace RPG.Combat
         public void Cancel()
         {
             StopAttack();
-            // GetComponent<Animator>().enabled=false;
+            // anim.enabled=false;
             target = null;
-            GetComponent<Mover>().Cancel();
+            mover.Cancel();
         }
 
         private void StopAttack()
         {
-            GetComponent<Animator>().ResetTrigger("attack");
-            GetComponent<Animator>().SetTrigger("stopAttack");
+            anim.ResetTrigger("attack1");
+            anim.ResetTrigger("attack2");
+            anim.ResetTrigger("attack3");
+            anim.SetTrigger("stopAttack");
+            // anim.ResetTrigger("stopAttack");
         }
 
         public void EquipWeapon(WeaponConfig weapon)
         {
             currentWeaponConfig = weapon;
             currentWeapon.value = AttachWeapon(weapon);
+            if(weapon.IsDual()){
+                currentSubWeapon.value = weapon.GetSubWeapon();
+            }
             if(GetComponent<IKController>()!= null){
                 GetComponent<IKController>().SetGrabObj(currentWeapon.value.GetGrabObj());
             }
         }
 
-        private Weapon AttachWeapon(WeaponConfig weapon)
+        private void UpdateWeapon(){
+            WeaponConfig weapon = equipment.GetItemInSlot(EquipLocation.Weapon) as WeaponConfig;
+            if(weapon == null) weapon = defaultWeapon;
+            EquipWeapon(weapon);
+        }
+
+        private Weapon AttachWeapon(WeaponConfig weaponConfig)
         {
-            Animator animator = GetComponent<Animator>();
-            return weapon.Spawn(rightHandTransform, leftHandTransform, animator);
+            Animator animator = anim;
+            Weapon weapon = weaponConfig.Spawn(rightHandTransform, leftHandTransform, animator);
+            return weapon;
         }
 
         public Health GetTarget(){
@@ -279,7 +377,10 @@ namespace RPG.Combat
         //     currentWeaponConfig.DisableTrigger();
         // }
 
-        [Button]
+        public int GetNumberOfAttack(){
+            return numberOfAttack;
+        }
+
         public void EnableWeaponTrigger(){
             currentWeapon.value.EnableTrigger();
             // agent.SetDestination(transform.position);
@@ -291,8 +392,41 @@ namespace RPG.Combat
             // agent.enabled = true;
         }
 
+        public void EnableSubWeaponTrigger(){
+            // currentSubWeapon.value.EnableTrigger();
+            currentWeapon.value.EnableTrigger();
+            // agent.SetDestination(transform.position);
+            // agent.enabled = false;
+        }
+
+        public void DisableSubWeaponTrigger(){
+            // currentSubWeapon.value.DisableTrigger();
+            currentWeapon.value.DisableTrigger();
+            // agent.enabled = true;
+        }
+
         public float GetBlockingAngle(){
             return currentWeaponConfig.GetBlockingAngle();
+        }
+
+        public void PlayEffect(){
+            currentWeapon.value.PlayEffect();
+        }
+
+        public void EnableTrail(){
+            currentWeapon.value.EnableTrail();
+        }
+
+        public void DisableTrail(){
+            currentWeapon.value.DisableTrail();
+        }
+
+        public bool GetIsAttacking(){
+            return isAttacking;
+        }
+
+        public void IncreaseMaxNumberOfAttack(int add){
+            Mathf.Clamp(tempMaxNumberOfAttack+add,1,maxNumberOfAttack);
         }
     }
 }
