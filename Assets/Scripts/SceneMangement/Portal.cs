@@ -2,8 +2,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using UnityEngine.AI;
-using RPG.Core;
-using RPG.Saving;
 using RPG.Control;
 
 namespace RPG.SceneManagement
