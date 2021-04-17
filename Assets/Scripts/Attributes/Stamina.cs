@@ -10,15 +10,16 @@ namespace RPG.Attributes
     {
         [SerializeField] float staminaRegen = .1f;
         [SerializeField] float staminaRegenRate = .01f;
-        [SerializeField] float staminaRegenInterval = 0f;
         [SerializeField] float sprintStaminaInterval = 1f;
         [SerializeField] float attckStaminaInterval = 1.5f;
         [SerializeField] float blockStaminaInterval = 1.5f;
         [SerializeField] float rollStaminaInterval = 1f;
+        [SerializeField] float stamina = 0f;
 
         LazyValue<float> staminaPoints;
         float sinceLastAction = 0f;
-
+        float staminaRegenInterval = 0f;
+        
         public enum StaminaType{
             sprint,
             attack,
@@ -33,6 +34,7 @@ namespace RPG.Attributes
         }
         
         private void Start() {
+            stamina = staminaPoints.value;
             StartCoroutine("RegenerateStamina");
             // InvokeRepeating("RegenerateStamina",0.0f, staminaRegenInterval);
         }
@@ -44,6 +46,7 @@ namespace RPG.Attributes
         // Update is called once per frame
         void Update()
         {
+            stamina = staminaPoints.value;
             if(staminaRegenInterval > 0){
                 staminaRegenInterval = Mathf.Max(staminaRegenInterval - Time.deltaTime,0);
             }
