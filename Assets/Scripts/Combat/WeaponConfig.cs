@@ -2,11 +2,12 @@
 using System.Collections;
 using UnityEngine;
 using RPG.Attributes;
+using GameDevTV.Inventories;
 
 namespace RPG.Combat
 {
     [CreateAssetMenu(fileName = "Weapon", menuName = "Weapons/Make New Weapon", order = 0)]
-    public class WeaponConfig : ScriptableObject
+    public class WeaponConfig : EquipableItem
     {
         [SerializeField]
         AnimatorOverrideController weaponOverride = null;
@@ -24,6 +25,9 @@ namespace RPG.Combat
         bool isRightHanded = true;
 
         [SerializeField]
+        bool isDual = false;
+
+        [SerializeField]
         Projectile projectile = null;
 
         [SerializeField]
@@ -35,6 +39,7 @@ namespace RPG.Combat
         const string weaponName = "Weapon";
 
         private Weapon currentWeaponInstance = null;
+        private Weapon currentSubWeaponInstance = null;
 
         public Weapon Spawn(Transform rightHand, Transform leftHand, Animator animator){
             DestroyOldWeapon(rightHand,leftHand);
@@ -47,6 +52,15 @@ namespace RPG.Combat
                 weapon = GameObject.Instantiate(equippedPrefab, handTransform);
                 weapon.gameObject.name = weaponName;
             }
+            Weapon weapon2 = null;
+            if(isDual){
+                if(isRightHanded){
+                    weapon2 = GameObject.Instantiate(equippedPrefab,leftHand);
+                }else if(!isRightHanded){
+                    weapon2 = GameObject.Instantiate(equippedPrefab,rightHand);
+                }
+                weapon2.gameObject.name = weaponName+"2";
+            }
 
             var overrideController = animator.runtimeAnimatorController as AnimatorOverrideController;
             if (weaponOverride!=null){
@@ -55,13 +69,15 @@ namespace RPG.Combat
                 animator.runtimeAnimatorController = overrideController.runtimeAnimatorController;
             }
             currentWeaponInstance = weapon;
+            if(weapon2 != null)
+                currentSubWeaponInstance = weapon2;
             return weapon;
         }
 
         private void DestroyOldWeapon(Transform rightHand, Transform leftHand)
         {
             Transform oldWeapon = rightHand.Find(weaponName);
-            if(oldWeapon == null){
+            if(oldWeapon == null||isDual){
                 oldWeapon = leftHand.Find(weaponName);
                 if(oldWeapon == null)
                     return;
@@ -123,9 +139,25 @@ namespace RPG.Combat
         public void DisableTrigger(){
             currentWeaponInstance.DisableTrigger();
         }
+        
+        public void EnableSubTrigger(){
+            currentSubWeaponInstance.EnableTrigger();
+        }
+
+        public void DisableSubTrigger(){
+            currentSubWeaponInstance.DisableTrigger();
+        }
 
         public float GetBlockingAngle(){
             return blockingAngle;
+        }
+
+        public bool IsDual(){
+            return isDual;
+        }
+
+        public Weapon GetSubWeapon(){
+            return currentSubWeaponInstance;
         }
     }
 }
