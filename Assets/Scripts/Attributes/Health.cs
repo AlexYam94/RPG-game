@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using RPG.Saving;
 using RPG.Stats;
 using RPG.Core;
 using RPG.Combat;
@@ -11,6 +10,7 @@ using UnityEngine.Events;
 using RPG.Control;
 using RPG.Tool;
 using Sirenix.OdinInspector;
+using GameDevTV.Saving;
 
 namespace RPG.Attributes
 {
@@ -21,7 +21,7 @@ namespace RPG.Attributes
         [SerializeField] UnityEvent onDie;
         [SerializeField] float blockingMultiplier = .5f;
         [SerializeField] float damageTakenCooldownTime = .5f;
-        [SerializeField][Range(0, 100)] float healthRegen = 100f;
+        [SerializeField][Range(0, 100)] float healthRegen = 0f;
         public Dictionary<GameObject, float> damageTakenCooldown = null;
         public List<GameObject> targetsToNotify = null;
 
@@ -63,10 +63,6 @@ namespace RPG.Attributes
             currentPercentage = GetFraction();
             UpdateDamageTakenCooldown();
             Heal(healthRegen);
-            List<GameObject> keys = new List<GameObject>(damageTakenCooldown.Keys);
-            foreach(var key in keys){
-                Debug.Log(damageTakenCooldown[key]);
-            }
         }
 
         private void UpdateHealth()
@@ -95,7 +91,7 @@ namespace RPG.Attributes
             instigator.GetComponent<Health>().AddTargetToNotify(gameObject);
             lock(damageTakenCooldown){
                 if(!damageTakenCooldown.ContainsKey(instigator)){
-                    damageTakenCooldown.Add(instigator, damageTakenCooldownTime);
+                    damageTakenCooldown.Add(instigator, 0);
                 }
                 if(damageTakenCooldown[instigator]>0){
                     return;
@@ -173,7 +169,7 @@ namespace RPG.Attributes
                 isDead = true;
             GetComponent<Animator>().SetTrigger("die");
             GetComponent<ActionScheduler>().CancelCurrentAction();
-            GetComponent<CapsuleCollider>().enabled = false;
+            // GetComponent<CapsuleCollider>().enabled = false;
             Health[] objects = UnityEngine.Object.FindObjectsOfType<Health>();
             // for (var i = 0; i < objects.Length; i++)
             // {
