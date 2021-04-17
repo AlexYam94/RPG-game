@@ -24,8 +24,9 @@ namespace RPG.Combat
 
         public bool HandleRaycast(PlayerController callingController)
         {
-            if (!callingController.GetComponent<Fighter>().CanAttack(this.gameObject))
+            if (!callingController.GetComponent<Fighter>().CanAttack(this.gameObject)){
                 return false;
+            }
             if (Input.GetMouseButton(0))
             {
                 callingController.GetComponent<Fighter>().Attack(this.gameObject);
