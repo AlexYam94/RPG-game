@@ -29,6 +29,7 @@ namespace RPG.Control
         [SerializeField] UnityEvent onAttack;
         [SerializeField] float gravityTemp = 10f;
         [SerializeField] float toGroundDistance = 1f;
+        [SerializeField] float maxTimeGapBetweenAttack = 0f;
 
 
         Health health;
@@ -40,7 +41,7 @@ namespace RPG.Control
         Rigidbody myRigidBody = null;
         Vector3 moveInput;
         Vector3 moveVelocity;
-        bool isAttacking = false;
+        bool isAttacking = false;       //set in attack animation
         private bool isRolling = false;
         private float maxForwardSpeed = 6f;
         float minForwardSpeed = 6f;
@@ -54,6 +55,8 @@ namespace RPG.Control
         float moveAnimationSpeedMultiplier = 1.2f;
         float walkSpeed =2.5f;
         float gravity = 0;
+        float timeSinceAttack = Mathf.Infinity;
+        int numberOfClicks = 0;
 
         // Start is called before the first frame update
         void Start()
@@ -95,6 +98,18 @@ namespace RPG.Control
             // print("Horizontal: " + Input.GetAxisRaw("Horizontal"));
             // print("Vertical: " + Input.GetAxisRaw("Vertical"));
 
+            // if(Input.GetKeyDown(KeyCode.Escape)){
+            //     Canvas canvas = GameObject.Find("Menu").GetComponent<Canvas>();
+            //     canvas.enabled = !canvas.enabled;
+            // }
+            if (!IsGrounded())
+            {
+                gravity = gravityTemp;
+            }
+            else
+            {
+                gravity = 0f;
+            }
             if (Input.GetKeyDown(KeyCode.LeftControl))
             {
                 GetComponent<ActionScheduler>().CancelCurrentAction();
@@ -117,61 +132,91 @@ namespace RPG.Control
             //     SetCursor(CursorType.None);
             //     return;
             // }
+
+            HandleInputs();
         }
 
-        void FixedUpdate() {
-            if(health.IsDead()) return;
-            if (!IsGrounded())
-            {
-                gravity = gravityTemp;
-            }
-            else
-            {
-                gravity = 0f;
-            }
+        void FixedUpdate()
+        {
+            if (health.IsDead()) return;
             
-            if (Input.GetMouseButton(0)&&!isAttacking&&stamina.HasStaminaLeft())
+
+            if (!isAttacking && !isRolling)
             {
-                onAttack.Invoke();
-                stamina.ConsumeStaminaOnce(25f, Stamina.StaminaType.attack);
-                attackTime = Util.GetCurrentAnimationTime(attackTime,"attack",anim);
-                StartCoroutine("StartAttack");
-            }else if(canRoll&&Input.GetKeyDown(KeyCode.Space)&&!isAttacking&&!isRolling&&stamina.HasStaminaLeft()){
-                anim.SetTrigger("roll");
-                canRoll = false;
-                StartCoroutine("StartRoll");
-                rollTime = Util.GetCurrentAnimationTime(rollTime,"roll", anim)*.7f;
-                stamina.ConsumeStaminaOnce(15f,Stamina.StaminaType.roll);
-                moveVelocity = (this.transform.forward ) * rollSpeed;
-                Debug.Log("x: "+ myRigidBody.velocity.x + " z: " + myRigidBody.velocity.z);
-                // myRigidBody.AddForce(this.transform.forward * rollSpeed * rollMultiplier);
-                moveVelocity.y = 0;
-                myRigidBody.velocity = moveVelocity;
-            }else if(Input.GetKeyUp(KeyCode.LeftShift)){
-                anim.SetFloat("sprintMultiplier", 1);
-                minForwardSpeed = 6f;
+                HandleMovement();
             }
-            if(Input.GetMouseButton(1)&&!isAttacking){
+
+            rollTime = Mathf.Max(rollTime - Time.deltaTime, 0);
+            if (rollTime == 0)
+            {
+                canRoll = true;
+            }
+
+            myRigidBody.AddRelativeForce(Vector3.down * gravity);
+            maxForwardSpeed = Mathf.Clamp(maxForwardSpeed - Time.deltaTime * stopSpeed, minForwardSpeed, 10);
+            // print("maxForwardSpeed: " + maxForwardSpeed); 
+        }
+
+        private void HandleInputs()
+        {
+            if(Input.GetKeyDown(KeyCode.E)){
+                PickupManager.Pickup();
+            }
+            if (!EventSystem.current.IsPointerOverGameObject()&&!isRolling && Input.GetMouseButtonDown(0) && !isAttacking && stamina.HasStaminaLeft())
+            {
+                HandleAttacking();
+            }
+            else if (canRoll && Input.GetKeyDown(KeyCode.Space) && !isAttacking && !isRolling && stamina.HasStaminaLeft())
+            {
+                HandleRolling();
+            }
+            else if (Input.GetKeyUp(KeyCode.LeftShift))
+            {
+                HandleSprinting();
+            }
+            if (Input.GetMouseButton(1) && !isAttacking)
+            {
                 isBlocking = true;
                 moveAnimationSpeedMultiplier = 1.2f;
             }
-            else{
+            else
+            {
                 isBlocking = false;
             }
+        }
 
-            if(!isAttacking&&!isRolling){
-                HandleMovement();
-            }
-            HandleBlocking();
+        private void HandleSprinting()
+        {
+            anim.SetFloat("sprintMultiplier", 1);
+            minForwardSpeed = 6f;
+        }
 
-            rollTime = Mathf.Max(rollTime-Time.deltaTime,0);
-            if(rollTime==0){
-                canRoll = true;
+        private void HandleRolling()
+        {
+            anim.SetTrigger("roll");
+            canRoll = false;
+            StartCoroutine("StartRoll");
+            rollTime = Util.GetCurrentAnimationTime(rollTime, "roll", anim) * .7f;
+            stamina.ConsumeStaminaOnce(15f, Stamina.StaminaType.roll);
+            moveVelocity = (this.transform.forward) * rollSpeed;
+            Debug.Log("x: " + myRigidBody.velocity.x + " z: " + myRigidBody.velocity.z);
+            // myRigidBody.AddForce(this.transform.forward * rollSpeed * rollMultiplier);
+            moveVelocity.y = 0;
+            myRigidBody.velocity = moveVelocity;
+        }
+
+        private void HandleAttacking()
+        {
+            onAttack.Invoke();
+            if(!isBlocking){
+                fighter.Attack(15f);
+            }else{
+                fighter.SpecialAttack(15f);
+                // print("test");
+                // anim.SetBool("test",true);
+                // stamina.ConsumeStaminaOnce(25f, Stamina.StaminaType.attack);
+                // SpecialAttack();
             }
-            
-            myRigidBody.AddRelativeForce(Vector3.down * gravity);
-            maxForwardSpeed = Mathf.Clamp(maxForwardSpeed-Time.deltaTime*stopSpeed,minForwardSpeed,10);
-            // print("maxForwardSpeed: " + maxForwardSpeed); 
         }
 
         private void HandleBlocking()
@@ -219,6 +264,7 @@ namespace RPG.Control
             // }
             // moveVelocity = moveInput * moveSpeed;
             walkSpeed = moveSpeed;
+            HandleBlocking();
             moveInput = targetDirection.normalized;
             moveVelocity = moveInput * walkSpeed;
             moveAnimationSpeedMultiplier = 1.2f;
@@ -311,7 +357,7 @@ namespace RPG.Control
             target = new Vector3();            
             RaycastHit hit;
             NavMeshHit navMeshHit;
-            Debug.DrawRay (GetMouseRay().origin, GetMouseRay().direction * 50000000, Color.red);
+            // Debug.DrawRay (GetMouseRay().origin, GetMouseRay().direction * 50000000, Color.red);
             // if(!Physics.Raycast(GetMouseRay(), out hit)) return false;
             if(!Physics.Raycast(GetMouseRay(), out hit,100f, layerMask)) return false;
             if(!NavMesh.SamplePosition(hit.point, out navMeshHit, maxNavMeshProjectionDistance, NavMesh.AllAreas)){
@@ -375,11 +421,16 @@ namespace RPG.Control
             return hits;
         }
 
+
+        public void SpecialAttack(){
+            anim.ResetTrigger("stopAttack");
+            anim.SetTrigger("attack1");
+        }
         
         public IEnumerator StartAttack(){
             // fighter.EnableTrigger();
-            GetComponent<Animator>().ResetTrigger("stopAttack");
-            GetComponent<Animator>().SetTrigger("attack");
+            anim.ResetTrigger("stopAttack");
+            anim.SetTrigger("attack");
             isAttacking=true;
             yield return new WaitForSeconds(attackTime/4*3);
             isAttacking=false;
@@ -409,12 +460,14 @@ namespace RPG.Control
         //     // agent.enabled = true;
         // }
 
-        public void SetIsAttacking(){
+        public void StartAttacking(){
             isAttacking = true;
         }
 
-        public void ResetIsAttacking(){
+        public void FinishAttacking(){
             isAttacking = false;
+            //increase max click maximum by 1
+            fighter.IncreaseMaxNumberOfAttack(1);
         }
 
         public void EnableInvulnerable(){
@@ -434,8 +487,9 @@ namespace RPG.Control
         }
 
         public bool IsGrounded() {
-            return Physics.Raycast(transform.position+(Vector3.up), -Vector3.up, toGroundDistance + 0.1f);
+            return Physics.Raycast(transform.position+(Vector3.up), -Vector3.up, toGroundDistance);
         }
+
     }
 }
 
