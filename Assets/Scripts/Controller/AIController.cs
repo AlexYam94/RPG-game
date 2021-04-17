@@ -10,6 +10,7 @@ using System;
 using UnityEngine.AI;
 using GameDevTV.Utils;
 using RPG.Stats;
+using RPG.Tool;
 
 namespace RPG.Control
 {
@@ -26,6 +27,8 @@ namespace RPG.Control
         [SerializeField] AggressiveLevel.AggressiveLevelEnum aggressiveLevel;
         [SerializeField] float backwardDistance = .1f;
         [SerializeField] float backwardSpeed = .1f;
+        [SerializeField] float chaseSpeed = 5f;
+        [SerializeField] float patrolSpeed = 3f;
 
         [SerializeField]
         [Range(0,1)]
@@ -38,12 +41,13 @@ namespace RPG.Control
         GameObject player;
         LazyValue<Vector3> guardPostion;
         int currentWaypointIndex = 0;
+        bool isAttacking = false;
+        Animator anim;
 
         float timeSinceLastSawPlayer = Mathf.Infinity;
         float timeSinceArriveAtWaypoint = Mathf.Infinity;
-        private float timeSinceAggrevated = Mathf.Infinity;
-        readonly float chaseSpeed = 5f;
-        readonly float patrolSpeed = 3f;
+        float timeSinceAggrevated = Mathf.Infinity;
+        float attackTime;
 
         private void Awake() {
             mover = GetComponent<Mover>();
@@ -64,6 +68,7 @@ namespace RPG.Control
         void Start()
         {
             guardPostion.ForceInit();
+            anim = GetComponent<Animator>();
         }
 
         // Update is called once per frame
@@ -78,19 +83,25 @@ namespace RPG.Control
             //     fighter.Attack(player);
             // }
             if (health.IsDead()) return;
+            if(isAttacking) return;
 
             if (IsAggrevated())
             {
+                Debug.DrawRay(transform.position, transform.forward * 5, Color.red);
+                Debug.DrawRay(transform.position, player.transform.position - transform.position, Color.green);
                 transform.LookAt(player.transform);
                 navMeshAgent.speed = chaseSpeed;
-                if(stamina.GetPercentage()<=aggressiveLevelDict.lookUp(aggressiveLevel))
+                if(stamina.GetPercentage()<=aggressiveLevelDict.lookUp(aggressiveLevel)&&!isAttacking)
                 {
                     //set destination to self?
                     // SetNavMeshAgentZVelocity(-1);
                     mover.MoveTo(transform.position - (transform.forward * backwardDistance),backwardSpeed);
                 }
                 else if(fighter.CanAttack(player)){
-                    AttackBehaviour();
+                    // if(stamina.HasStaminaLeft()){
+                        // mover.Cancel();
+                        AttackBehaviour();
+                    // }
                 }else{
                     mover.MoveTo(player.transform.position,1f);
                 }
@@ -169,6 +180,15 @@ namespace RPG.Control
             fighter.Attack(player);
 
             AggrevateNearbyEnemies();
+            StartCoroutine("StartAttack");
+        }
+
+        public IEnumerator StartAttack(){
+            attackTime = Util.GetCurrentAnimationTime(attackTime,"attack",anim);
+            isAttacking=true;
+            yield return new WaitForSeconds(attackTime);
+            isAttacking=false;
+            // fighter.DisableTrigger();
         }
 
         private void AggrevateNearbyEnemies()
