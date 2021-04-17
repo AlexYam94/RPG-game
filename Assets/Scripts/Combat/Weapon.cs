@@ -13,11 +13,36 @@ namespace RPG.Combat
         
         [SerializeField] GameObject leftHandGrabPoint = null;
 
-        private bool canTrigger = false;
+        [SerializeField] ParticleSystem effectOnAttack;
+
+        [SerializeField] TrailRenderer[] trailRenderers;
+
+        [SerializeField] bool canTrigger = false;
 
         public void OnHit()
         {
             onHit.Invoke();
+        }
+
+        public void PlayEffect(){
+            if(effectOnAttack!=null)
+                effectOnAttack.Play();
+        }
+
+        public void EnableTrail(){
+            foreach (var trail in trailRenderers)
+            {
+                if(trail!=null)
+                    trail.enabled = true;
+            }
+        }
+
+        public void DisableTrail(){
+            foreach (var trail in trailRenderers)
+            {
+                if(trail!=null)
+                    trail.enabled = false;
+            }
         }
 
         public void EnableTrigger(){
@@ -43,6 +68,10 @@ namespace RPG.Combat
         //     float damage = GameObject.FindGameObjectWithTag("Player").GetComponent<BaseStats>().GetStat(Stat.Damage);
         //     target.TakeDamage(GameObject.FindGameObjectWithTag("Player"), damage);
         // }
+
+        public bool HasEffect(){
+            return effectOnAttack == null;
+        }
 
         public bool GetCanTrigger(){
             return canTrigger;
