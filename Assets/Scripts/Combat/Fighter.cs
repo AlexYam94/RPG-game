@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using RPG.Core;
@@ -212,22 +212,13 @@ namespace RPG.Combat
                 if (!currentWeapon.value.GetCanTrigger()) return;
                 if (target != other.gameObject.GetComponent<Health>()) return;
                 if (target.GetInstigatorDamageCooldown(gameObject) > 0) return;
-                bool hit = new System.Random().Next(0, 100) < hitRate;
-                float damage = GetComponent<BaseStats>().GetStat(Stat.Damage);
+                float damage = baseStat.GetStat(Stat.Damage);
+                Armour armour = other.gameObject.GetComponent<Armour>();
 
                 if (currentWeapon.value != null)
                 {
-                    currentWeapon.value.OnHit();
+                    currentWeapon.value.OnHit(armour.GetArmourType());
                 }
-
-                if (currentWeaponConfig.hasProjectile())
-                {
-                    currentWeaponConfig.LaunchProjectile(rightHandTransform, leftHandTransform, target, gameObject, damage);
-                }
-                else
-                {
-                    if (hit)
-                    {
                         target.TakeDamage(gameObject, damage);
                     }
                     // else

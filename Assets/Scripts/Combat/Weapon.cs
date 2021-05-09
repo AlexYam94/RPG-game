@@ -2,26 +2,35 @@
 using System.Collections.Generic;
 using RPG.Attributes;
 using RPG.Stats;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
 
 namespace RPG.Combat
 {
-    public class Weapon : MonoBehaviour
+    public class Weapon : SerializedMonoBehaviour 
     {
         [SerializeField] UnityEvent onHit;
-        
+        [SerializeField] UnityEvent onAttack;
+        [SerializeField] UnityEvent onStartAttack;
         [SerializeField] GameObject leftHandGrabPoint = null;
-
         [SerializeField] ParticleSystem effectOnAttack;
-
         [SerializeField] TrailRenderer[] trailRenderers;
-
         [SerializeField] bool canTrigger = false;
+        [SerializeField] Dictionary<ArmourType, AudioSource> hitSounds;
 
-        public void OnHit()
+        public void OnHit(ArmourType armourType)
         {
+            hitSounds[armourType].Play();
             onHit.Invoke();
+        }
+
+        public void OnAttack(){
+            onAttack.Invoke();
+        }
+        
+        public void OnStartAttack(){
+            onStartAttack.Invoke();
         }
 
         public void PlayEffect(){
@@ -78,7 +87,7 @@ namespace RPG.Combat
         }
 
         public Transform GetGrabObj(){
-            return leftHandGrabPoint.transform;
+            return leftHandGrabPoint==null? null: leftHandGrabPoint.transform;
         }
     }
 }
