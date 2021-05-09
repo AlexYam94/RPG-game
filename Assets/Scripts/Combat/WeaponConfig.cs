@@ -36,6 +36,12 @@ namespace RPG.Combat
         [SerializeField]
         float percentageBonus = 5f;
 
+        [SerializeField]
+        float staminaPerHit = 15f;
+
+        [SerializeField]
+        float staminaSpecialAttack = 25f;
+
         const string weaponName = "Weapon";
 
         private Weapon currentWeaponInstance = null;
@@ -77,12 +83,14 @@ namespace RPG.Combat
         private void DestroyOldWeapon(Transform rightHand, Transform leftHand)
         {
             Transform oldWeapon = rightHand.Find(weaponName);
-            if(oldWeapon == null||isDual){
-                oldWeapon = leftHand.Find(weaponName);
-                if(oldWeapon == null)
-                    return;
+            Transform oldWeapon2 = leftHand.Find(weaponName);
+            if(oldWeapon != null){
                 oldWeapon.name = "Destroying";
                 Destroy(oldWeapon.gameObject);
+            }
+            if(oldWeapon2 != null){
+                oldWeapon2.name = "Destroying";
+                Destroy(oldWeapon2.gameObject);
             }
         }
 
@@ -105,10 +113,11 @@ namespace RPG.Combat
             return this.projectile != null;
         }
 
-        public void LaunchProjectile(Transform rightHand, Transform leftHand, Health target, GameObject instigator, float calculatedDamage){
+        public void LaunchProjectile(Transform rightHand, Transform leftHand, Health target, GameObject instigator, float calculatedDamage, Vector3 shootDirection){
 
             Projectile projectileInstance = Instantiate(projectile, GetHandTransform(rightHand,leftHand).position, Quaternion.identity);
             projectileInstance.SetTarget(target, instigator, calculatedDamage);
+            projectileInstance.SetShootDirection(shootDirection);
 
         }
 
@@ -158,6 +167,14 @@ namespace RPG.Combat
 
         public Weapon GetSubWeapon(){
             return currentSubWeaponInstance;
+        }
+
+        public float GetStaminaPerHit(){
+            return staminaPerHit;
+        }
+        
+        public float GetStaminaSpecialAttack(){
+            return staminaSpecialAttack;
         }
     }
 }
