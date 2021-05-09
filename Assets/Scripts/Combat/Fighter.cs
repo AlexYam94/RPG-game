@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using RPG.Core;
@@ -16,7 +16,6 @@ namespace RPG.Combat
 {
     public class Fighter : MonoBehaviour, IAction, ISaveable, IModifierProvider
     {
-        [SerializeField] [Range(0, 100)] int hitRate;
 
         [SerializeField] float timeBetweenAttacks = 0.1f;
 
@@ -47,7 +46,9 @@ namespace RPG.Combat
         int numberOfAttack = 0;
         int tempMaxNumberOfAttack = 1;
         Equipment equipment;
-        
+        BaseStats baseStat;
+        private Vector3 shootDirection;
+        Armour armour;
 
         private void Awake() {
             currentWeapon = new LazyValue<Weapon>(SetupDefaultWeapon);
@@ -59,17 +60,21 @@ namespace RPG.Combat
             if(equipment) {
                 equipment.equipmentUpdated += UpdateWeapon;
             }
+            baseStat = GetComponent<BaseStats>();
+            armour = GetComponent<Armour>();
         }
 
         private Weapon SetupDefaultWeapon()
         {
             return AttachWeapon(defaultWeapon);
+            // return EquipWeapon(defaultWeapon);
         }
 
         // Start is called before the first frame update
         void Start()
         {
             currentWeapon.ForceInit();
+            // equipment.AddItem(EquipLocation.Weapon,currentWeaponConfig);
         }
 
         // Update is called once per frame
@@ -100,7 +105,7 @@ namespace RPG.Combat
             {
                 mover.Cancel();
                 if(stamina.HasStaminaLeft()){
-                    AttackBehaviour();
+                    AttackBehaviour(20f);
                 }
             }
         }
@@ -153,35 +158,56 @@ namespace RPG.Combat
 
         private IEnumerator TriggerAttack(){
             // print(gameObject.name + ": attack" + numberOfAttack);
+            int tempAttckNum = numberOfAttack;
             anim.ResetTrigger("stopAttack");
-            anim.SetTrigger("attack"+numberOfAttack);
+            anim.SetTrigger("attack"+tempAttckNum);
+            // if (currentWeaponConfig.hasProjectile())
+            // {
+            //     Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            //     RaycastHit hit;
+            //     Physics.Raycast(ray, out hit, 30f);
+            //     Vector3 targetPos = hit.point;
+            //     targetPos.y = transform.position.y;
+            //     transform.LookAt(targetPos);
+            //     currentWeaponConfig.LaunchProjectile(rightHandTransform, leftHandTransform, target, gameObject, baseStat.GetStat(Stat.Damage));
+            // }
             if(attackTime>0){
                 isAttacking=true;
                 yield return new WaitForSeconds(attackTime);
                 isAttacking=false;
             }
+            anim.ResetTrigger("attack"+tempAttckNum);
             anim.SetTrigger("stopAttack");
         }
         
+        // public void Attack(GameObject combatTarget)
+        // {
+        //     attackTime = Util.GetCurrentAnimationTime(attackTime,"attack",anim);
+        //     target = combatTarget.GetComponent<Health>();
+        //     mover.Cancel();
+        //     GetComponent<ActionScheduler>().StartAction(this);
+        // }
+
         public void Attack(GameObject combatTarget)
         {
-            attackTime = Util.GetCurrentAnimationTime(attackTime,"attack",anim);
-            target = combatTarget.GetComponent<Health>();
-            mover.Cancel();
-            GetComponent<ActionScheduler>().StartAction(this);
+            float staminaToConsume = currentWeaponConfig.GetStaminaPerHit();
+            attackTime = Util.GetCurrentAnimationTime(attackTime,"attack",anim)/2;
+            if(combatTarget!=null){
+                //for AiController
+                mover.Cancel();
+                target = combatTarget.GetComponent<Health>();
+                GetComponent<ActionScheduler>().StartAction(this);
+            }else{
+                //for PlayerController
+                AttackBehaviour(staminaToConsume);
+            }
         }
 
-        public void Attack(float staminaToConsume)
-        {
-            attackTime = Util.GetCurrentAnimationTime(attackTime,"attack",anim)/4*2;
-            AttackBehaviour(staminaToConsume);
-        }
-
-        public void SpecialAttack(float staminaToConsume)
+        public void SpecialAttack()
         {
             attackTime = Util.GetCurrentAnimationTime(attackTime,"attack",anim)/4*2;
             StartCoroutine("TriggerSpecialAttack");
-            stamina.ConsumeStaminaOnce(staminaToConsume,Stamina.StaminaType.attack);
+            stamina.ConsumeStaminaOnce(currentWeaponConfig.GetStaminaSpecialAttack(),Stamina.StaminaType.attack);
             timeSinceAttack = 0f;
         }
 
@@ -219,11 +245,16 @@ namespace RPG.Combat
                 {
                     currentWeapon.value.OnHit(armour.GetArmourType());
                 }
-                        target.TakeDamage(gameObject, damage);
-                    }
-                    // else
-                    // print("MISS");
-                }
+                target.TakeDamage(gameObject, damage);
+
+                // if (currentWeaponConfig.hasProjectile())
+                // {
+                //     currentWeaponConfig.LaunchProjectile(rightHandTransform, leftHandTransform, target, gameObject, damage);
+                // }
+                // else
+                // {
+                //     target.TakeDamage(gameObject, damage);
+                // }
             }
         }
 
@@ -235,7 +266,18 @@ namespace RPG.Combat
             // print("trigger");
             // print(other.gameObject.name);
             Health target = other.gameObject.GetComponent<Health>();
-            if(target == null) return;
+            Armour armour = other.gameObject.GetComponent<Armour>();
+            if (currentWeapon.value != null && armour!=null)
+            {
+                currentWeapon.value.OnHit(armour.GetArmourType());
+            }
+            Obstacle obstacle = other.gameObject.GetComponent<Obstacle>();
+            if(obstacle!=null&&obstacle.IsRecoil()){
+                //trigger obstacle animation
+                anim.SetBool("recoiling",true);
+                //stop player input in animation?
+            }
+            if(target == null ) return;
             float damage = GameObject.FindGameObjectWithTag("Player").GetComponent<BaseStats>().GetStat(Stat.Damage);
             target.TakeDamage(GameObject.FindGameObjectWithTag("Player"), damage);
         }
@@ -244,7 +286,6 @@ namespace RPG.Combat
         void Hit()
         {
         //     if (target == null) return;
-        //     bool hit = new System.Random().Next(0, 100) < hitRate;
         //     float damage = GetComponent<BaseStats>().GetStat(Stat.Damage);
 
         //     if(currentWeapon.value!=null){
@@ -266,9 +307,14 @@ namespace RPG.Combat
         //     }
         }
 
-        void Shoot()
+        public void OnAttack(){
+            currentWeapon.value.OnAttack();
+        }
+
+        public void Shoot()
         {
-            // Hit();
+            currentWeapon.value.OnAttack();
+            currentWeaponConfig.LaunchProjectile(rightHandTransform, leftHandTransform, target, gameObject, baseStat.GetStat(Stat.Damage),shootDirection);
         }
 
         private bool GetIsInRange(Transform targetTransform)
@@ -320,12 +366,17 @@ namespace RPG.Combat
 
         private void UpdateWeapon(){
             WeaponConfig weapon = equipment.GetItemInSlot(EquipLocation.Weapon) as WeaponConfig;
-            if(weapon == null) weapon = defaultWeapon;
+            if(weapon == null) {
+                weapon = defaultWeapon;
+            }
             EquipWeapon(weapon);
         }
 
         private Weapon AttachWeapon(WeaponConfig weaponConfig)
         {
+            // if(gameObject.tag=="Player"&&equipment.GetItemInSlot(EquipLocation.Weapon)==null){
+            //     equipment.AddItem(EquipLocation.Weapon,weaponConfig);
+            // }
             Animator animator = anim;
             Weapon weapon = weaponConfig.Spawn(rightHandTransform, leftHandTransform, animator);
             return weapon;
@@ -367,6 +418,10 @@ namespace RPG.Combat
         // public void DisableTrigger(){
         //     currentWeaponConfig.DisableTrigger();
         // }
+
+        public void StartAttack(){
+            currentWeapon.value.OnStartAttack();
+        }
 
         public int GetNumberOfAttack(){
             return numberOfAttack;
@@ -418,6 +473,14 @@ namespace RPG.Combat
 
         public void IncreaseMaxNumberOfAttack(int add){
             Mathf.Clamp(tempMaxNumberOfAttack+add,1,maxNumberOfAttack);
+        }
+
+        public bool HasProjectile(){
+            return currentWeaponConfig.hasProjectile();
+        }
+
+        public void SetShootDirection(Vector3 direction){
+            this.shootDirection = direction;
         }
     }
 }

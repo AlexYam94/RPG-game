@@ -16,21 +16,30 @@ namespace RPG.Combat
         [SerializeField] GameObject[] destroyOnHit = null;
         [SerializeField] float lifeAfterImpact = 1;
         [SerializeField] UnityEvent onHit;
+        [SerializeField] float heightOffset=1.2f;
 
+        int layerMask = 0b00000001;
         Health target = null;
         GameObject instigator = null;
         float damage = 0f;
         bool isLookedAt = false;
+        Vector3 shootDirection;
+        [SerializeField] float testNum;
 
         // Update is called once per frame
         private void Update()
         {
-            if (target == null) return;
-            if ((!isLookedAt || isHoming) && !target.GetComponent<Health>().IsDead())
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+            Physics.Raycast(ray, out hit,100f);
+            Debug.DrawRay(Camera.main.transform.position, (hit.point-Camera.main.transform.position)*20, Color.green);
+            // if (target == null) return;
+            // if ((!isLookedAt || isHoming) && !target.GetComponent<Health>().IsDead())
+            if(!isLookedAt)
             {
                 isLookedAt = true;
                 transform.LookAt(GetAimLocation());
-            }
+            };
             transform.Translate(Vector3.forward * speed * Time.deltaTime);
         }
 
@@ -42,15 +51,15 @@ namespace RPG.Combat
             // }
             Health health = other.gameObject.GetComponent<Health>();
 
-            if (health != target) return;
-            print(target.gameObject.name);
+            if (instigator.GetComponent<Health>()==health || instigator.gameObject.tag!="Player"&&health != target) return;
 
             onHit.Invoke();
             if (hitEffect != null)
             {
-                GameObject.Instantiate(hitEffect, GetAimLocation(), transform.rotation);
+                // GameObject.Instantiate(hitEffect, GetAimLocation(), transform.rotation);
+                GameObject.Instantiate(hitEffect, transform.position, transform.rotation);
             }
-            target.TakeDamage(this.instigator,damage);
+            health.TakeDamage(this.instigator,damage);
 
             speed = 0;
 
@@ -58,6 +67,8 @@ namespace RPG.Combat
             {
                 Destroy(toDestroy);
             }
+
+            GetComponent<BoxCollider>().enabled = false;
 
             Destroy(gameObject, lifeAfterImpact);
         }
@@ -72,9 +83,20 @@ namespace RPG.Combat
 
         private Vector3 GetAimLocation()
         {
-            CapsuleCollider targetCapsule = target.GetComponent<CapsuleCollider>();
-            if (targetCapsule == null) return target.transform.position;
-            return target.transform.position + Vector3.up * targetCapsule.height / 2;
+            if(target!=null){
+                CapsuleCollider targetCapsule = target.GetComponent<CapsuleCollider>();
+                if (targetCapsule == null) return target.transform.position;
+                return target.transform.position + Vector3.up * targetCapsule.height / 2;
+            }else{
+                // Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                // RaycastHit hit;
+                // Physics.Raycast(ray, out hit, 30f, layerMask);
+                // Vector3 targetPos = hit.point;
+                // Vector3 playerPos = GameObject.FindGameObjectWithTag("Player").gameObject.transform.position;
+                // targetPos.y = transform.position.y;
+                // return targetPos;
+                return shootDirection;
+            }
             // return Vector3.forward * Time.deltaTime * speed;
         }
 
@@ -84,6 +106,12 @@ namespace RPG.Combat
 
         public GameObject GetInstigator() {
             return instigator;
+        }
+
+        internal void SetShootDirection(Vector3 shootDirection)
+        {
+            shootDirection.y = transform.position.y/testNum;
+            this.shootDirection = shootDirection;
         }
     }
 

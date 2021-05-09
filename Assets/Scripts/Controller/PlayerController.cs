@@ -57,6 +57,8 @@ namespace RPG.Control
         float gravity = 0;
         float timeSinceAttack = Mathf.Infinity;
         int numberOfClicks = 0;
+        bool isOverrideRotation;
+        Vector3 overrideRotation;
 
         // Start is called before the first frame update
         void Start()
@@ -94,6 +96,7 @@ namespace RPG.Control
         // Update is called once per frame
         void Update()
         {
+            DrawMousePos();
             // anim.SetFloat("movingSpeed",5f);
             // print("Horizontal: " + Input.GetAxisRaw("Horizontal"));
             // print("Vertical: " + Input.GetAxisRaw("Vertical"));
@@ -136,11 +139,26 @@ namespace RPG.Control
             HandleInputs();
         }
 
+        void DrawMousePos(){
+            // Vector3 mousePos = Input.mousePosition;
+            // mousePos.z = transform.position.y;
+            // Vector3 pos = Camera.main.ScreenToWorldPoint(mousePos);
+            // pos.y = transform.position.y;
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+            Physics.Raycast(ray, out hit,100f);
+            // Debug.DrawRay(Camera.main.transform.position, ray.direction*10, Color.red);
+            Debug.DrawRay(Camera.main.transform.position, (hit.point-Camera.main.transform.position)*20, Color.red);
+            
+            // Debug.DrawRay (GetMouseRay().origin, GetMouseRay().direction * 500, Color.red);
+            // if(!Physics.Raycast(GetMouseRay(), out hit,100f, layerMask)) return false;
+        }
+
         void FixedUpdate()
         {
             if (health.IsDead()) return;
-            
 
+            OverrideRotation();
             if (!isAttacking && !isRolling)
             {
                 HandleMovement();
@@ -155,6 +173,18 @@ namespace RPG.Control
             myRigidBody.AddRelativeForce(Vector3.down * gravity);
             maxForwardSpeed = Mathf.Clamp(maxForwardSpeed - Time.deltaTime * stopSpeed, minForwardSpeed, 10);
             // print("maxForwardSpeed: " + maxForwardSpeed); 
+        }
+
+        private void OverrideRotation()
+        {
+            if (isOverrideRotation)
+            {
+                transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(overrideRotation), rotateSpeed);
+            }
+            if (!isAttacking &&( Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.D) || Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.D)))
+            {
+                isOverrideRotation = false;
+            }
         }
 
         private void HandleInputs()
@@ -209,9 +239,9 @@ namespace RPG.Control
         {
             onAttack.Invoke();
             if(!isBlocking){
-                fighter.Attack(15f);
+                fighter.Attack(null);
             }else{
-                fighter.SpecialAttack(15f);
+                fighter.SpecialAttack();
                 // print("test");
                 // anim.SetBool("test",true);
                 // stamina.ConsumeStaminaOnce(25f, Stamina.StaminaType.attack);
@@ -269,7 +299,7 @@ namespace RPG.Control
             moveVelocity = moveInput * walkSpeed;
             moveAnimationSpeedMultiplier = 1.2f;
 
-            if (Input.GetAxisRaw("Horizontal") != 0 || Input.GetAxisRaw("Vertical") != 0)
+            if (x != 0 || z != 0)
             {
                 // anim.SetBool("isMoving", true);
                 anim.SetFloat("forwardSpeed"
@@ -357,7 +387,7 @@ namespace RPG.Control
             target = new Vector3();            
             RaycastHit hit;
             NavMeshHit navMeshHit;
-            // Debug.DrawRay (GetMouseRay().origin, GetMouseRay().direction * 50000000, Color.red);
+            // Debug.DrawRay (GetMouseRay().origin, GetMouseRay().direction * 50000000, Color.green);
             // if(!Physics.Raycast(GetMouseRay(), out hit)) return false;
             if(!Physics.Raycast(GetMouseRay(), out hit,100f, layerMask)) return false;
             if(!NavMesh.SamplePosition(hit.point, out navMeshHit, maxNavMeshProjectionDistance, NavMesh.AllAreas)){
@@ -427,15 +457,15 @@ namespace RPG.Control
             anim.SetTrigger("attack1");
         }
         
-        public IEnumerator StartAttack(){
-            // fighter.EnableTrigger();
-            anim.ResetTrigger("stopAttack");
-            anim.SetTrigger("attack");
-            isAttacking=true;
-            yield return new WaitForSeconds(attackTime/4*3);
-            isAttacking=false;
-            // fighter.DisableTrigger();
-        }
+        // public IEnumerator StartAttack(){
+        //     // fighter.EnableTrigger();
+        //     anim.ResetTrigger("stopAttack");
+        //     anim.SetTrigger("attack");
+        //     isAttacking=true;
+        //     yield return new WaitForSeconds(attackTime/4*3);
+        //     isAttacking=false;
+        //     // fighter.DisableTrigger();
+        // }
 
         public IEnumerator StartRoll(){
             isRolling = true;
@@ -462,6 +492,24 @@ namespace RPG.Control
 
         public void StartAttacking(){
             isAttacking = true;
+            fighter.StartAttack();
+            if(fighter.HasProjectile()){
+                
+                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                RaycastHit hit;
+                Physics.Raycast(ray, out hit, 30f);
+                Vector3 targetPos = hit.point;
+                targetPos.y = transform.position.y;
+                fighter.SetShootDirection(targetPos);
+                isOverrideRotation = true;
+                Vector3 direction = new Vector3(
+                    targetPos.x - transform.position.x,
+                    0f,
+                    targetPos.z - transform.position.z
+                );
+                overrideRotation = direction;
+                // transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(direction), rotateSpeed);
+            }
         }
 
         public void FinishAttacking(){
@@ -476,14 +524,6 @@ namespace RPG.Control
 
         public void DisableInvulnerable(){
             health.SetInvulnerable(false);
-        }
-
-        public void FootL(){
-
-        }
-
-        public void FootR(){
-
         }
 
         public bool IsGrounded() {
