@@ -4,10 +4,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using RPG.Attributes;
 using UnityEngine.Events;
+using RPG.Core;
 
 namespace RPG.Combat
 {
-    public class Projectile : MonoBehaviour
+    public abstract class Projectile : MonoBehaviour, IDamageDealer
     {
         [SerializeField] float speed = 1f;
         [SerializeField] bool isHoming = false;
@@ -16,15 +17,32 @@ namespace RPG.Combat
         [SerializeField] GameObject[] destroyOnHit = null;
         [SerializeField] float lifeAfterImpact = 1;
         [SerializeField] UnityEvent onHit;
+        [SerializeField] UnityEvent onLaunch;
         [SerializeField] float heightOffset=1.2f;
 
-        int layerMask = 0b00000001;
-        Health target = null;
-        GameObject instigator = null;
+
+        protected Health target = null;
+        // protected GameObject instigator = null;
+
+        int layerMask = 0b01100001;
         float damage = 0f;
         bool isLookedAt = false;
         Vector3 shootDirection;
-        [SerializeField] float testNum;
+        protected ICharacter instigator;
+        ICharacter IDamageDealer.instigator { get => instigator; set => instigator = value; }
+
+        UnityEvent IDamageDealer.onHit => throw new NotImplementedException();
+        UnityEvent IDamageDealer.onAttack => throw new NotImplementedException();
+        UnityEvent IDamageDealer.onStartAttack => throw new NotImplementedException();
+        UnityEvent _onHit = new UnityEvent();
+        UnityEvent _onAttack = new UnityEvent();
+        UnityEvent _onStartAttack = new UnityEvent();
+
+        float IDamageDealer.damage { get => damage; set => damage = value; }
+
+        private void Start() {
+            onLaunch.Invoke();
+        }
 
         // Update is called once per frame
         private void Update()
@@ -50,17 +68,18 @@ namespace RPG.Combat
             //     return;
             // }
             Health health = other.gameObject.GetComponent<Health>();
+            // if(target == null) target = health;
 
-            if (instigator.GetComponent<Health>()==health || instigator.gameObject.tag!="Player"&&health != target) return;
-
+            if (instigator.GetHealthComponent()==health || instigator.GetTag()!="Player"&&health != target) return;
+            
+            // if (instigator.GetHealthComponent()==health) return;
             onHit.Invoke();
             if (hitEffect != null)
             {
                 // GameObject.Instantiate(hitEffect, GetAimLocation(), transform.rotation);
                 GameObject.Instantiate(hitEffect, transform.position, transform.rotation);
             }
-            health.TakeDamage(this.instigator,damage);
-
+            ApplyDamage(health);
             speed = 0;
 
             foreach (GameObject toDestroy in destroyOnHit)
@@ -73,13 +92,22 @@ namespace RPG.Combat
             Destroy(gameObject, lifeAfterImpact);
         }
 
-        public void SetTarget(Health target, GameObject instigator, float damage)
+        public virtual void ApplyDamage(UnityEngine.Object target){
+            if(!typeof(Health).IsAssignableFrom(target.GetType())) return;
+            ((Health)target).IsDamageTaken(this.instigator,damage);
+            this.target = (Health)target;
+            this.SpecialDamage();
+        }
+
+        public virtual void SetTarget(Health target, ICharacter instigator, float damage)
         {
             Destroy(gameObject, maxLifeTime);
             this.instigator = instigator;
             this.damage = damage;
             this.target = target;
         }
+        
+        public virtual void SpecialDamage(){}
 
         private Vector3 GetAimLocation()
         {
@@ -104,14 +132,19 @@ namespace RPG.Combat
             return target;
         }
 
-        public GameObject GetInstigator() {
+        public ICharacter GetInstigator() {
             return instigator;
         }
 
+
         internal void SetShootDirection(Vector3 shootDirection)
         {
-            shootDirection.y = transform.position.y/testNum;
             this.shootDirection = shootDirection;
+        }
+
+        public void DealDamage(IDamageReceiver target)
+        {
+            throw new NotImplementedException();
         }
     }
 
