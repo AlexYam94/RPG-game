@@ -49,6 +49,7 @@ namespace RPG.Combat
         BaseStats baseStat;
         private Vector3 shootDirection;
         Armour armour;
+        ICharacter character;
 
         private void Awake() {
             currentWeapon = new LazyValue<Weapon>(SetupDefaultWeapon);
@@ -62,6 +63,7 @@ namespace RPG.Combat
             }
             baseStat = GetComponent<BaseStats>();
             armour = GetComponent<Armour>();
+            character = GetComponent<ICharacter>();
         }
 
         private Weapon SetupDefaultWeapon()
@@ -237,15 +239,16 @@ namespace RPG.Combat
                 if (target == null) return;
                 if (!currentWeapon.value.GetCanTrigger()) return;
                 if (target != other.gameObject.GetComponent<Health>()) return;
-                if (target.GetInstigatorDamageCooldown(gameObject) > 0) return;
+                if (target.GetInstigatorDamageCooldown(character) > 0) return;
                 float damage = baseStat.GetStat(Stat.Damage);
                 Armour armour = other.gameObject.GetComponent<Armour>();
 
-                if (currentWeapon.value != null)
-                {
-                    currentWeapon.value.OnHit(armour.GetArmourType());
+                if(target.IsDamageTaken(character, damage)){
+                    if (currentWeapon.value != null)
+                    {
+                        currentWeapon.value.OnHit(armour.GetArmourType());
+                    }
                 }
-                target.TakeDamage(gameObject, damage);
 
                 // if (currentWeaponConfig.hasProjectile())
                 // {
@@ -267,7 +270,12 @@ namespace RPG.Combat
             // print(other.gameObject.name);
             Health target = other.gameObject.GetComponent<Health>();
             Armour armour = other.gameObject.GetComponent<Armour>();
-            if (currentWeapon.value != null && armour!=null)
+            float damage = GetComponent<BaseStats>().GetStat(Stat.Damage);
+            // if(target.IsDamageTaken(GameObject.FindGameObjectWithTag("Player"), damage)){
+            //     currentWeapon.value.OnHit(armour.GetArmourType());
+            // }
+            if ((currentWeapon.value != null && armour!=null && target==null)
+                || target.IsDamageTaken(character, damage))
             {
                 currentWeapon.value.OnHit(armour.GetArmourType());
             }
@@ -278,8 +286,10 @@ namespace RPG.Combat
                 //stop player input in animation?
             }
             if(target == null ) return;
-            float damage = GameObject.FindGameObjectWithTag("Player").GetComponent<BaseStats>().GetStat(Stat.Damage);
-            target.TakeDamage(GameObject.FindGameObjectWithTag("Player"), damage);
+            // float damage = GameObject.FindGameObjectWithTag("Player").GetComponent<BaseStats>().GetStat(Stat.Damage);
+            // if(target.IsDamageTaken(GameObject.FindGameObjectWithTag("Player"), damage)){
+            //     currentWeapon.value.OnHit(armour.GetArmourType());
+            // }
         }
 
         // //Animation effect
@@ -313,8 +323,9 @@ namespace RPG.Combat
 
         public void Shoot()
         {
+            if(!currentWeaponConfig.hasProjectile()) return;
             currentWeapon.value.OnAttack();
-            currentWeaponConfig.LaunchProjectile(rightHandTransform, leftHandTransform, target, gameObject, baseStat.GetStat(Stat.Damage),shootDirection);
+            currentWeaponConfig.LaunchProjectile(rightHandTransform, leftHandTransform, target, character, baseStat.GetStat(Stat.Damage),shootDirection);
         }
 
         private bool GetIsInRange(Transform targetTransform)
@@ -480,6 +491,7 @@ namespace RPG.Combat
         }
 
         public void SetShootDirection(Vector3 direction){
+            direction.y = transform.position.y;
             this.shootDirection = direction;
         }
     }

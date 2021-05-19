@@ -14,7 +14,7 @@ using RPG.Tool;
 
 namespace RPG.Control
 {
-    public class AIController : MonoBehaviour
+    public class AIController : MonoBehaviour, ICharacter
     {
         [SerializeField] float chaseDistance = 5f;
         [SerializeField] float suspicionTime = 3f;
@@ -49,7 +49,9 @@ namespace RPG.Control
         float timeSinceAggrevated = Mathf.Infinity;
         float attackTime;
 
-        private void Awake() {
+        AIState currentState = AIState.GUARD_STATE;
+
+        void Awake() {
             mover = GetComponent<Mover>();
             player = GameObject.FindWithTag("Player");
             fighter = GetComponent<Fighter>();
@@ -83,8 +85,9 @@ namespace RPG.Control
             //     fighter.Attack(player);
             // }
             if (health.IsDead()) return;
-            if(isAttacking) return;
-
+            if(isAttacking) {
+                return;
+            }
             if (IsAggrevated())
             {
                 Debug.DrawRay(transform.position, transform.forward * 5, Color.red);
@@ -180,10 +183,10 @@ namespace RPG.Control
             fighter.Attack(player);
 
             AggrevateNearbyEnemies();
-            StartCoroutine("StartAttack");
+            StartCoroutine("WaitAttackFinish");
         }
 
-        public IEnumerator StartAttack(){
+        public IEnumerator WaitAttackFinish(){
             attackTime = Util.GetCurrentAnimationTime(attackTime,"attack",anim);
             isAttacking=true;
             yield return new WaitForSeconds(attackTime);
@@ -224,6 +227,46 @@ namespace RPG.Control
             return (distanceToPlayer <= chaseDistance) || (timeSinceAggrevated < agroCooldownTime);
         }
 
+        public Health GetHealthComponent()
+        {
+            return health;
+        }
+
+        public Fighter GetFighterComponent()
+        {
+            return fighter;
+        }
+
+        public void HandleMovement()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void HandleCombat()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void HandleRotation()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void InteractWithComponent()
+        {
+            throw new NotImplementedException();
+        }
+
+        public GameObject GetGameObject()
+        {
+            return gameObject;
+        }
+
+        public string GetTag()
+        {
+            return gameObject.tag;
+        }
+
         // public void EnableWeaponTrigger(){
         //     print("Enable weapon trigger");
         //     fighter.EnableTrigger();
@@ -237,6 +280,14 @@ namespace RPG.Control
         //     // agent.enabled = true;
         // }
 
+    }
+
+    public enum AIState {
+        ALERT_STATE,
+        RECOVER_STATE,
+        ATTACK_STATE,
+        RECOIL_STATE,
+        GUARD_STATE,
     }
 }
 

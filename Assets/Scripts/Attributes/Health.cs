@@ -22,7 +22,7 @@ namespace RPG.Attributes
         [SerializeField] float blockingMultiplier = .5f;
         [SerializeField] float damageTakenCooldownTime = .5f;
         [SerializeField][Range(0, 100)] float healthRegen = 0f;
-        public Dictionary<GameObject, float> damageTakenCooldown = null;
+        public Dictionary<ICharacter, float> damageTakenCooldown = null;
         public List<GameObject> targetsToNotify = null;
 
         [System.Serializable]
@@ -40,7 +40,7 @@ namespace RPG.Attributes
         private void Awake() {
             healthPoints = new LazyValue<float>(GetInitialHealth);
             GetComponent<BaseStats>().onLevelUp += UpdateHealth;
-            damageTakenCooldown = new Dictionary<GameObject, float>();
+            damageTakenCooldown = new Dictionary<ICharacter, float>();
             targetsToNotify = new List<GameObject>();
         }
 
@@ -75,7 +75,7 @@ namespace RPG.Attributes
         }
 
         private void UpdateDamageTakenCooldown(){
-            List<GameObject> keys = new List<GameObject>(damageTakenCooldown.Keys);
+            List<ICharacter> keys = new List<ICharacter>(damageTakenCooldown.Keys);
             foreach(var key in keys){
                 damageTakenCooldown[key] = Mathf.Max(damageTakenCooldown[key] - Time.deltaTime,0);
             }
@@ -85,23 +85,24 @@ namespace RPG.Attributes
             return isDead;
         }
 
-        public void TakeDamage(GameObject instigator, float damage)
+        public bool IsDamageTaken(ICharacter instigator, float damage)
         {
-            if (isDead) return;
-            instigator.GetComponent<Health>().AddTargetToNotify(gameObject);
+            if (isDead) return false;
+            
+            instigator.GetHealthComponent().AddTargetToNotify(gameObject);
             lock(damageTakenCooldown){
                 if(!damageTakenCooldown.ContainsKey(instigator)){
                     damageTakenCooldown.Add(instigator, 0);
                 }
                 if(damageTakenCooldown[instigator]>0){
-                    return;
+                    return false;
                 }else{
                     damageTakenCooldown[instigator] = damageTakenCooldownTime;
                     if(gameObject.tag == "Player"){
                         if(isInvulnerable){
-                            return;
+                            return false;
                         }else if(gameObject.GetComponent<PlayerController>().IsBlocking()){
-                            Vector3 direction = instigator.transform.position - transform.position;
+                            Vector3 direction = instigator.GetGameObject().transform.position - transform.position;
                             float angle = Vector3.Angle(direction, transform.forward);
                             if(angle <= Util.GetBlockingAngle(gameObject)/2){
                                 damage *= blockingMultiplier;
@@ -109,10 +110,11 @@ namespace RPG.Attributes
                         }
                     }
                     healthPoints.value = Mathf.Max(healthPoints.value - damage, 0);
-                    CheckDeath(instigator);
+                    CheckDeath(instigator.GetGameObject());
 
                     takeDamage.Invoke(damage);
                 }
+                return true;
             }
         }
 
@@ -130,19 +132,19 @@ namespace RPG.Attributes
             }
         }
 
-        public void StartDamageOfTime(float damage, float duration, GameObject instigator){
+        public void StartDamageOfTime(float damage, float duration, ICharacter instigator){
             damageOfTimeCounter = duration;
             damagePerSec = damage/duration;
             StartCoroutine(DamageOfTime(damagePerSec,instigator));
         }
 
-        public IEnumerator DamageOfTime(float damagePerSecond, GameObject instigator){
+        public IEnumerator DamageOfTime(float damagePerSecond, ICharacter instigator){
             yield return new WaitForSeconds(0.5f);
             while (damageOfTimeCounter > 0)
             {
-                TakeDamage(instigator, damagePerSecond);
+                IsDamageTaken(instigator, damagePerSecond);
                 damageOfTimeCounter -= 1;
-                CheckDeath(instigator);
+                CheckDeath(instigator.GetGameObject());
                 yield return new WaitForSeconds(1f);
             }
         }
@@ -179,7 +181,7 @@ namespace RPG.Attributes
             // }
             foreach (var item in targetsToNotify)
             {
-                item.GetComponent<Health>().RemoveInstigator(gameObject);
+                item.GetComponent<Health>().RemoveInstigator(gameObject.GetComponent<ICharacter>());
             }
         }
 
@@ -187,13 +189,13 @@ namespace RPG.Attributes
             isInvulnerable = target;
         }
 
-        public float GetInstigatorDamageCooldown(GameObject key){
+        public float GetInstigatorDamageCooldown(ICharacter key){
             if(!damageTakenCooldown.ContainsKey(key))
                 return 0;
             return damageTakenCooldown[key];
         }
 
-        public void RemoveInstigator(GameObject key){
+        public void RemoveInstigator(ICharacter key){
             damageTakenCooldown.Remove(key);
         }
 

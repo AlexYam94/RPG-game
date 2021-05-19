@@ -14,7 +14,7 @@ using UnityEngine.Events;
 namespace RPG.Control
 {
 
-    public class PlayerController : MonoBehaviour
+    public class PlayerController : MonoBehaviour, ICharacter
     {
         [SerializeField] CursorMapping[] cursorMappings = null;
         [SerializeField] float maxNavMeshProjectionDistance = 1f;
@@ -41,7 +41,7 @@ namespace RPG.Control
         Rigidbody myRigidBody = null;
         Vector3 moveInput;
         Vector3 moveVelocity;
-        bool isAttacking = false;       //set in attack animation
+        [SerializeField] bool isAttacking = false;       //set in attack animation
         private bool isRolling = false;
         private float maxForwardSpeed = 6f;
         float minForwardSpeed = 6f;
@@ -50,6 +50,7 @@ namespace RPG.Control
         Stamina stamina = null;
         bool canSprint = true;
         bool canRoll = true;
+        bool canMove = true;
         bool isBlocking = false;
         float rollTime = 0f;
         float moveAnimationSpeedMultiplier = 1.2f;
@@ -159,9 +160,11 @@ namespace RPG.Control
             if (health.IsDead()) return;
 
             OverrideRotation();
-            if (!isAttacking && !isRolling)
+            if (canMove && !isRolling)
             {
                 HandleMovement();
+                myRigidBody.AddRelativeForce(Vector3.down * gravity);
+                maxForwardSpeed = Mathf.Clamp(maxForwardSpeed - Time.deltaTime * stopSpeed, minForwardSpeed, 10);
             }
 
             rollTime = Mathf.Max(rollTime - Time.deltaTime, 0);
@@ -170,8 +173,6 @@ namespace RPG.Control
                 canRoll = true;
             }
 
-            myRigidBody.AddRelativeForce(Vector3.down * gravity);
-            maxForwardSpeed = Mathf.Clamp(maxForwardSpeed - Time.deltaTime * stopSpeed, minForwardSpeed, 10);
             // print("maxForwardSpeed: " + maxForwardSpeed); 
         }
 
@@ -477,18 +478,13 @@ namespace RPG.Control
             return isBlocking;
         }
 
-        // public void EnableWeaponTrigger(){
-        //     print("Enable weapon trigger");
-        //     fighter.EnableTrigger();
-        //     // agent.SetDestination(transform.position);
-        //     // agent.enabled = false;
-        // }
+        public void EnableMove(){
+            canMove = true;
+        }
 
-        // public void DisableWeaponTrigger(){
-        //     print("Disable weapon trigger");
-        //     fighter.DisableTrigger();
-        //     // agent.enabled = true;
-        // }
+        public void DisableMove(){
+            canMove = false;
+        }
 
         public void StartAttacking(){
             isAttacking = true;
@@ -514,7 +510,6 @@ namespace RPG.Control
 
         public void FinishAttacking(){
             isAttacking = false;
-            //increase max click maximum by 1
             fighter.IncreaseMaxNumberOfAttack(1);
         }
 
@@ -530,6 +525,45 @@ namespace RPG.Control
             return Physics.Raycast(transform.position+(Vector3.up), -Vector3.up, toGroundDistance);
         }
 
+        public Health GetHealthComponent()
+        {
+            return health;
+        }
+
+        public Fighter GetFighterComponent()
+        {
+            return fighter;
+        }
+
+        void ICharacter.HandleMovement()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void HandleCombat()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void HandleRotation()
+        {
+            throw new NotImplementedException();
+        }
+
+        void ICharacter.InteractWithComponent()
+        {
+            throw new NotImplementedException();
+        }
+
+        public GameObject GetGameObject()
+        {
+            return gameObject;
+        }
+
+        public string GetTag()
+        {
+            return gameObject.tag;
+        }
     }
 }
 

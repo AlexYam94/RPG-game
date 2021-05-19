@@ -3,6 +3,7 @@ using System.Collections;
 using UnityEngine;
 using RPG.Attributes;
 using GameDevTV.Inventories;
+using RPG.Core;
 
 namespace RPG.Combat
 {
@@ -113,7 +114,7 @@ namespace RPG.Combat
             return this.projectile != null;
         }
 
-        public void LaunchProjectile(Transform rightHand, Transform leftHand, Health target, GameObject instigator, float calculatedDamage, Vector3 shootDirection){
+        public void LaunchProjectile(Transform rightHand, Transform leftHand, Health target, ICharacter instigator, float calculatedDamage, Vector3 shootDirection){
 
             Projectile projectileInstance = Instantiate(projectile, GetHandTransform(rightHand,leftHand).position, Quaternion.identity);
             projectileInstance.SetTarget(target, instigator, calculatedDamage);
