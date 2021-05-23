@@ -7,6 +7,7 @@ namespace RPG.Combat{
         Iron,
         Wood,
         Stone,
+        Flesh,
         None
     }
 }
