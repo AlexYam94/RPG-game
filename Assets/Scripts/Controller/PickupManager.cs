@@ -22,6 +22,7 @@ namespace RPG.Control
 
         public static void Register(Pickup pickup)
         {
+            if(pickups.Contains(pickup)) return;
             pickups.Add(pickup);
         }
 
