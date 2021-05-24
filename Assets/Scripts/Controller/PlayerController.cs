@@ -137,7 +137,6 @@ namespace RPG.Control
             //     return;
             // }
 
-            HandleInputs();
         }
 
         void DrawMousePos(){
@@ -158,9 +157,10 @@ namespace RPG.Control
         void FixedUpdate()
         {
             if (health.IsDead()) return;
+            HandleInputs();
 
             OverrideRotation();
-            if (canMove && !isRolling)
+            if (canMove && !isRolling && !isOverrideRotation)
             {
                 HandleMovement();
                 myRigidBody.AddRelativeForce(Vector3.down * gravity);
@@ -197,7 +197,7 @@ namespace RPG.Control
             {
                 HandleAttacking();
             }
-            else if (canRoll && Input.GetKeyDown(KeyCode.Space) && !isAttacking && !isRolling && stamina.HasStaminaLeft())
+            else if (canMove && canRoll && Input.GetKeyDown(KeyCode.Space) && !isAttacking && !isRolling && stamina.HasStaminaLeft())
             {
                 HandleRolling();
             }
@@ -480,10 +480,12 @@ namespace RPG.Control
 
         public void EnableMove(){
             canMove = true;
+            canRoll = true;
         }
 
         public void DisableMove(){
             canMove = false;
+            canRoll = false;
         }
 
         public void StartAttacking(){
