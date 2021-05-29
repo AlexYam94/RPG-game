@@ -119,7 +119,7 @@ namespace RPG.Combat
             Projectile projectileInstance = Instantiate(projectile, GetHandTransform(rightHand,leftHand).position, Quaternion.identity);
             projectileInstance.SetTarget(target, instigator, calculatedDamage);
             projectileInstance.SetShootDirection(shootDirection);
-
+            projectileInstance.Launch();
         }
 
         public float GetPercentageBonus(){
