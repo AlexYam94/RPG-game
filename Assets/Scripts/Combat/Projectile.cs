@@ -24,7 +24,7 @@ namespace RPG.Combat
         protected Health target = null;
         // protected GameObject instigator = null;
 
-        int layerMask = 0b01100001;
+        int layerMask = 0b1001100001;
         float damage = 0f;
         bool isLookedAt = false;
         Vector3 shootDirection;
@@ -40,9 +40,9 @@ namespace RPG.Combat
 
         float IDamageDealer.damage { get => damage; set => damage = value; }
 
-        private void Start() {
-            onLaunch.Invoke();
-        }
+        // private void Start() {
+        //     onLaunch.Invoke();
+        // }
 
         // Update is called once per frame
         private void Update()
@@ -126,6 +126,10 @@ namespace RPG.Combat
                 return shootDirection;
             }
             // return Vector3.forward * Time.deltaTime * speed;
+        }
+
+        public void Launch(){
+            onLaunch.Invoke();
         }
 
         public Health GetTarget(){
