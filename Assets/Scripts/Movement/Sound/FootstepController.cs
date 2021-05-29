@@ -47,12 +47,13 @@ namespace RPG.Movement
         private void PlayFootStep(AudioSource footstepSource)
         {
             // if(footstepSource.isPlaying) return;
-            if (footstepTable.ContainsKey(currentFootStepType))
+            if (!footstepTable.ContainsKey(currentFootStepType))
             {
+                currentFootStepType = FootstepType.defaultFootstep;
+            }
                 AudioClip[] sources = footstepTable[currentFootStepType];
                 System.Random rnd = new System.Random();
                 footstepSource.PlayOneShot(sources[rnd.Next(0, sources.Length - 1)]);
-            }
         }
 
     }
