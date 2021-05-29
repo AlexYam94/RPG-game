@@ -11,15 +11,24 @@ namespace RPG.Tool
     {   
         public static float GetCurrentAnimationTime(float originTime, String nameContained, Animator anim)
         {
-            float result = originTime;
-            AnimationClip[] clips = anim.runtimeAnimatorController.animationClips;
-            foreach (AnimationClip clip in clips){
-                if(clip.name.IndexOf(nameContained, StringComparison.InvariantCultureIgnoreCase)>=0){
-                    // print(clip.name + ", " +clip.length);
-                    result = clip.length;
+            AnimatorClipInfo[] animatorClipInfos = anim.GetCurrentAnimatorClipInfo(0);
+            
+            // result = animatorClipInfos[0].clip.length;
+            foreach (AnimatorClipInfo clipInfo in animatorClipInfos){
+                if(clipInfo.clip.name.IndexOf(nameContained, StringComparison.InvariantCultureIgnoreCase)>=0){
+                        // print(clip.name + ", " +clip.length);
+                        Debug.Log(clipInfo.clip.name);
+                        return clipInfo.clip.length;
+                    }
                 }
-            }
-            return result;
+            // AnimationClip[] clips = anim.runtimeAnimatorController.animationClips;
+            // foreach (AnimationClip clip in clips){
+            //     if(clip.name.IndexOf(nameContained, StringComparison.InvariantCultureIgnoreCase)>=0){
+            //         // print(clip.name + ", " +clip.length);
+            //         result = clip.length;
+            //     }
+            // }
+            return 0;
         } 
 
         public static float GetBlockingAngle(GameObject obj){
