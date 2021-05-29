@@ -6,7 +6,7 @@ using RPG.Stats;
 using UnityEngine;
 namespace RPG.Attributes
 {
-    public class Stamina : MonoBehaviour
+    public class Stamina : MonoBehaviour, IAttribute
     {
         [SerializeField] float staminaRegen = .1f;
         [SerializeField] float staminaRegenRate = .01f;

@@ -14,7 +14,7 @@ using GameDevTV.Saving;
 
 namespace RPG.Attributes
 {
-    public class Health : SerializedMonoBehaviour, ISaveable 
+    public class Health : SerializedMonoBehaviour, ISaveable, IAttribute
     {
         [SerializeField][Range(0, 100)] float healthRegenerationOnLevelUp = 10f;
         [SerializeField] TakeDamageEvent takeDamage;
