@@ -1,14 +1,15 @@
 
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace RPG.Attributes
 {
-    public abstract class EnemyBar : MonoBehaviour, IBar
+    public abstract class EnemyBar : SerializedMonoBehaviour, IBar
     {
         [SerializeField] protected RectTransform foreground = null;
         [SerializeField] protected Canvas canvas = null;
         [SerializeField] protected GameObject followTarget = null;
-        [SerializeField, SerializeReference] protected IAttribute component = null;
+        [SerializeField] protected IAttribute component;
 
         float y = 0;
 
