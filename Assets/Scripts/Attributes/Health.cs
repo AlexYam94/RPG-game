@@ -14,7 +14,7 @@ using GameDevTV.Saving;
 
 namespace RPG.Attributes
 {
-    public class Health : SerializedMonoBehaviour, ISaveable, IAttribute
+    public class Health : SerializedMonoBehaviour, ISaveable, IAttribute, IHealth
     {
         [SerializeField][Range(0, 100)] float healthRegenerationOnLevelUp = 10f;
         [SerializeField] TakeDamageEvent takeDamage;
@@ -22,6 +22,7 @@ namespace RPG.Attributes
         [SerializeField] float blockingMultiplier = .5f;
         [SerializeField] float damageTakenCooldownTime = .5f;
         [SerializeField][Range(0, 100)] float healthRegen = 0f;
+        [SerializeField] public List<GameObject> gameObjectToDisable = new List<GameObject>();
         public Dictionary<ICharacter, float> damageTakenCooldown = null;
         public List<GameObject> targetsToNotify = null;
 
@@ -111,6 +112,9 @@ namespace RPG.Attributes
                     }
                     healthPoints.value = Mathf.Max(healthPoints.value - damage, 0);
                     CheckDeath(instigator.GetGameObject());
+                    if(!isDead&&(gameObject.name.ToLower().Contains("grunt")||gameObject.name.ToLower().Contains("archer"))){
+                        GetComponent<Animator>().SetTrigger("recoiling");
+                    }
 
                     takeDamage.Invoke(damage);
                 }
@@ -125,7 +129,7 @@ namespace RPG.Attributes
                 Experience exp = instigator.GetComponent<Experience>();
                 if (exp != null)
                 {
-                    exp.GainExperince(GetComponent<BaseStats>().GetStat(Stat.ExperienceReward));
+                    exp.GainExperience(GetComponent<BaseStats>().GetStat(Stat.ExperienceReward));
                 }
                 onDie.Invoke();
                 Die();
@@ -165,23 +169,25 @@ namespace RPG.Attributes
             return healthPoints.value/GetComponent<BaseStats>().GetStat(Stat.Health);
         }
 
-        private void Die()
+        public void Die()
         {
             if(isDead) return;
                 isDead = true;
             GetComponent<Animator>().SetTrigger("die");
             GetComponent<ActionScheduler>().CancelCurrentAction();
-            // GetComponent<CapsuleCollider>().enabled = false;
-            Health[] objects = UnityEngine.Object.FindObjectsOfType<Health>();
-            // for (var i = 0; i < objects.Length; i++)
-            // {
-            //     if(objects[i].gameObject == gameObject)
-            //         continue;
-            //     objects[i].RemoveInstigator(gameObject);
-            // }
+            Collider[] colliders = GetComponents<Collider>();
+            GetComponent<Stamina>().enabled = false;
             foreach (var item in targetsToNotify)
             {
                 item.GetComponent<Health>().RemoveInstigator(gameObject.GetComponent<ICharacter>());
+            }
+            foreach (GameObject obj in gameObjectToDisable)
+            {
+                obj.SetActive(false);
+            }
+            foreach (var item in colliders)
+            {   
+                item.enabled = false;
             }
         }
 
@@ -219,6 +225,16 @@ namespace RPG.Attributes
         {
             healthPoints.value = (float)state;
             if(healthPoints.value <= 0) Die();
+        }
+
+        public bool isEnable()
+        {
+            return GetComponent<Health>().enabled;
+        }
+
+        public void ApplyDamage(float damage)
+        {
+            takeDamage.Invoke(damage);
         }
     }
 }
