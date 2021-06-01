@@ -16,8 +16,10 @@ namespace RPG.Combat
         [SerializeField] TrailRenderer[] trailRenderers;
         [SerializeField] bool canTrigger = false;
         [SerializeField] Dictionary<ArmourType, AudioSource> hitSounds;
+        [Range(0,2)][SerializeField] float hitboxMaxEnableTime = .5f;
 
         private Collider hitbox;
+        private float hitboxTimer = 0f;
 
         public float damage { 
             get => damage; 
@@ -42,6 +44,14 @@ namespace RPG.Combat
 
         private void Start() {
             DisableTrail();
+        }
+
+        private void Update() {
+            if(hitbox.enabled){
+                if(hitboxTimer>=hitboxMaxEnableTime)
+                    ResetHitbox();
+                hitboxTimer+=Time.deltaTime;
+            }
         }
 
         public void OnHit(ArmourType armourType)
@@ -87,23 +97,18 @@ namespace RPG.Combat
         }
 
         public void DisableTrigger(){
-            hitbox.enabled = false;
+            // hitbox.enabled = false;
+            ResetHitbox();
             // canTrigger = false;
         }
 
         private void OnTriggerEnter(Collider other) {
-            print("OnTriggerEnter canTrigger: " + canTrigger);
             DealDamage(other.GetComponent<IDamageReceiver>());
-        //     if(!canTrigger){
-        //         return;
-        //     }
-        //     print("trigger");
-        //     print(GetComponent<BoxCollider>().enabled);
-        //     print(other.gameObject.name);
-        //     Health target = other.gameObject.GetComponent<Health>();
-        //     if(target == null) return;
-        //     float damage = GameObject.FindGameObjectWithTag("Player").GetComponent<BaseStats>().GetStat(Stat.Damage);
-        //     target.TakeDamage(GameObject.FindGameObjectWithTag("Player"), damage);
+        }
+
+        private void ResetHitbox(){
+            hitbox.enabled = false;
+            hitboxTimer = 0f;
         }
 
         public bool HasEffect(){
