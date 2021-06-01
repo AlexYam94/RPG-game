@@ -16,7 +16,10 @@ namespace RPG.Attributes
         private void Awake()
         {
             y = transform.position.y;
+            component = GetAttriute();
         }
+
+        protected abstract IAttribute GetAttriute();
 
         protected void Follow()
         {
@@ -27,20 +30,27 @@ namespace RPG.Attributes
 
         public void UpdateUI()
         {
+            if(!component.isEnable()){
+                SetCanvas(false);
+                this.enabled=false;
+            }
             float fraction = component.GetFraction();
             if (foreground != null)
             {
                 foreground.localScale = new Vector3(fraction, 1, 1);
                 if (Mathf.Approximately(fraction, 0) || Mathf.Approximately(fraction, 1))
                 {
-                    canvas.enabled = false;
-                    return;
+                    SetCanvas(false);
                 }
                 else
                 {
-                    canvas.enabled = true;
+                    SetCanvas(true);
                 }
             }
+        }
+
+        protected void SetCanvas(bool value){
+            canvas.enabled = value;
         }
     }
 }

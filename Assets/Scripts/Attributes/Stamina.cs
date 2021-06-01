@@ -120,5 +120,10 @@ namespace RPG.Attributes
                 return staminaPoints.value > 0;
             }
         }
+
+        public bool isEnable()
+        {
+            return GetComponent<Stamina>().enabled;
+        }
     }
 }

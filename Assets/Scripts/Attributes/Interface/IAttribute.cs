@@ -8,5 +8,6 @@ namespace RPG.Attributes
     {
         float GetFraction();
         float GetPercentage();
+        bool isEnable();
     }
 }
