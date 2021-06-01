@@ -12,5 +12,10 @@ namespace RPG.Attributes
             Follow();
             UpdateUI();
         }
+        
+        protected override IAttribute GetAttriute()
+        {
+            return transform.parent.GetComponentInChildren(typeof(Stamina)) as IAttribute;
+        }
     }
 }
