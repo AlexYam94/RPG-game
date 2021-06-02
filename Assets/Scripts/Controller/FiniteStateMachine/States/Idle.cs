@@ -12,7 +12,7 @@ namespace RPG.Control{
         }
 
         public void OnEnter(){
-            _navMeshAgent.enabled = false;
+            // _navMeshAgent.enabled = false;
             _animator.SetFloat("forwardSpeed",0);
         }
 
@@ -21,7 +21,7 @@ namespace RPG.Control{
         }
 
         public void OnExit(){
-            _navMeshAgent.enabled = true;
+            // _navMeshAgent.enabled = true;
         }
     }
 }

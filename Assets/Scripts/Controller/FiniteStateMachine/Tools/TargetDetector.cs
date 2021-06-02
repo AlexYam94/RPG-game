@@ -11,6 +11,10 @@ namespace RPG.Control
             return _detectedTarget?.transform.position ?? Vector3.zero;
         }
 
+        public GameObject GetTarget(){
+            return _detectedTarget;
+        }
+
         private void OnTriggerEnter(Collider other) {
             // if(other.gameObject.tag == targetTag){
             if(other.GetComponent<T>()!=null){
