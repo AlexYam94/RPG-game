@@ -33,10 +33,10 @@ namespace RPG.Attributes
 
         private void UpdateHealth()
         {
-            float nextHealth = GetComponent<BaseStats>().GetStat(Stat.Health);
-            float percentage = Mathf.Clamp(currentPercentage,0,100);
-            float tempHealth = nextHealth * (percentage + healthRegenerationOnLevelUp/100);
-            healthPoints.value = Mathf.Clamp(tempHealth,tempHealth,nextHealth);
+            float nextLevelMaxHealth = GetComponent<BaseStats>().GetStat(Stat.Health);
+            float currentHealthPercentage = Mathf.Clamp(currentPercentage,0,100);
+            float nextLevelHealth = nextLevelMaxHealth * (currentHealthPercentage + healthRegenerationOnLevelUp/100);
+            healthPoints.value = Mathf.Clamp(nextLevelHealth,nextLevelHealth,nextLevelMaxHealth);
         }
         
         private void Die()
