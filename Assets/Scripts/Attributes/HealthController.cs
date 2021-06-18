@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using GameDevTV.Saving;
-using GameDevTV.Utils;
+﻿using GameDevTV.Saving;
 using RPG.Core;
 using RPG.Stats;
 using Sirenix.OdinInspector;
@@ -15,59 +12,37 @@ namespace RPG.Attributes
         [SerializeField] [Range(0, 100)] float healthRegenerationOnLevelUp = 10f;
         [SerializeField] UnityEvent onDie;
         [SerializeField] [Range(0, 100)] float healthRegen = 0f;
+        [SerializeField] MonoBehaviour[] componentsToDisbaleOnDie;
 
-        LazyValue<float> healthPoints;
         bool isDead = false;
         float currentPercentage = 1f;
-        float damageOfTimeCounter = 0;
-        float damagePerSec = 0;
+
+        HealthControllerBehaviour behaviour;
 
         private void Awake() {
-            healthPoints = new LazyValue<float>(GetInitialHealth);
-            GetComponent<BaseStats>().onLevelUp += UpdateHealth;
-        }
-        
-        private float GetInitialHealth(){
-            return GetComponent<BaseStats>().GetStat(Stat.Health);
+            behaviour = new HealthControllerBehaviour(healthRegenerationOnLevelUp, GetComponent<Animator>(), GetComponent<ActionScheduler>(), GetComponents<Collider>(), componentsToDisbaleOnDie, GetComponent<BaseStats>());
         }
 
-        private void UpdateHealth()
+        private void Update()
         {
-            float nextLevelMaxHealth = GetComponent<BaseStats>().GetStat(Stat.Health);
-            float currentHealthPercentage = Mathf.Clamp(currentPercentage,0,100);
-            float nextLevelHealth = nextLevelMaxHealth * (currentHealthPercentage + healthRegenerationOnLevelUp/100);
-            healthPoints.value = Mathf.Clamp(nextLevelHealth,nextLevelHealth,nextLevelMaxHealth);
+            behaviour.CheckDeath();
         }
-        
-        private void Die()
-        {
-            if(isDead) return;
-                isDead = true;
-            GetComponent<Animator>().SetTrigger("die");
-            GetComponent<ActionScheduler>().CancelCurrentAction();
-            Collider[] colliders = GetComponents<Collider>();
-            GetComponent<Stamina>().enabled = false;
-            foreach (var item in colliders)
-            {   
-                item.enabled = false;
-            }
-        }
-        
+
         public bool IsDead(){
-            return isDead;
+            return behaviour.IsDead();
         }
 
         public void ApplyDamage(float damage)
         {
-            healthPoints.value = Mathf.Max(healthPoints.value - damage, 0);
+            behaviour.ApplyDamage(damage);
         }
 
         public float GetPercentage(){
-            return healthPoints.value/GetComponent<BaseStats>().GetStat(Stat.Health) * 100;
+            return behaviour.GetPercentage();
         }
 
         public float GetFraction(){
-            return healthPoints.value/GetComponent<BaseStats>().GetStat(Stat.Health);
+            return behaviour.GetFraction();
         }
 
         public bool isEnable()
@@ -77,13 +52,13 @@ namespace RPG.Attributes
 
         public object CaptureState()
         {
-            return healthPoints.value;
+            return behaviour;
         }
 
         public void RestoreState(object state)
         {
-            healthPoints.value = (float)state;
-            if(healthPoints.value <= 0) Die();
+            behaviour = (HealthControllerBehaviour)state;
+            if(behaviour.healthPoints.value <= 0) behaviour.Die();
         }
     }
 }
