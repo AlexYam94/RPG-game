@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace RPG.Stats
 {
-    public class BaseStats : MonoBehaviour
+    public class BaseStats : MonoBehaviour, IBaseStats
     {
         [Range(1,100)]
         [SerializeField] int startinglevel = 1;
@@ -15,13 +15,13 @@ namespace RPG.Stats
         [SerializeField] GameObject levelUpParticleEffect = null;
         [SerializeField] bool shouldUseModifiers = false;
 
-        Experience experience;
+        IExperience experience;
         LazyValue<int> currentLevel;
         public event Action onLevelUp;
 
         private void Awake() {
             currentLevel = new LazyValue<int>(CalculateLevel);
-            experience = GetComponent<Experience>();
+            experience = GetComponent<IExperience>();
         }
 
         private void OnEnable() {

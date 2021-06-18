@@ -8,7 +8,7 @@ using RPG.Core;
 namespace RPG.Combat
 {
     [CreateAssetMenu(fileName = "Weapon", menuName = "Weapons/Make New Weapon", order = 0)]
-    public class WeaponConfig : EquipableItem
+    public class WeaponConfig : EquipableItem, IWeaponConfig
     {
         [SerializeField]
         AnimatorOverrideController weaponOverride = null;
@@ -21,6 +21,7 @@ namespace RPG.Combat
 
         [SerializeField]
         float weaponDamage = 1f;
+        // Damage weaponDamage;
 
         [SerializeField]
         bool isRightHanded = true;
@@ -48,7 +49,7 @@ namespace RPG.Combat
         private Weapon currentWeaponInstance = null;
         private Weapon currentSubWeaponInstance = null;
 
-        public Weapon Spawn(Transform rightHand, Transform leftHand, Animator animator){
+        public Weapon Spawn(Transform rightHand, Transform leftHand, Animator animator, ICharacter instigator){
             DestroyOldWeapon(rightHand,leftHand);
 
             Transform handTransform;
@@ -58,6 +59,8 @@ namespace RPG.Combat
                 handTransform = GetHandTransform(rightHand, leftHand);
                 weapon = GameObject.Instantiate(equippedPrefab, handTransform);
                 weapon.gameObject.name = weaponName;
+                weapon.instigator = instigator;
+                weapon.damage = weaponDamage;
             }
             Weapon weapon2 = null;
             if(isDual){
@@ -67,6 +70,8 @@ namespace RPG.Combat
                     weapon2 = GameObject.Instantiate(equippedPrefab,rightHand);
                 }
                 weapon2.gameObject.name = weaponName+"2";
+                weapon2.instigator = instigator;
+                weapon2.damage = weaponDamage;
             }
 
             var overrideController = animator.runtimeAnimatorController as AnimatorOverrideController;
@@ -110,7 +115,7 @@ namespace RPG.Combat
             return handTransform;
         }
 
-        public bool hasProjectile(){
+        public bool HasProjectile(){
             return this.projectile != null;
         }
 
