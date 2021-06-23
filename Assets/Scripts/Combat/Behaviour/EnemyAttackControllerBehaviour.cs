@@ -18,7 +18,7 @@ namespace RPG.Combat
             throw new System.NotImplementedException();
         }
 
-        public void Init(float timeBetweenAttacks, float attackSpeed, int maxNumberOfAttack, Animator anim, IAttribute stamina, MonoBehaviour coroutineRunner)
+        public void Init(float timeBetweenAttacks, float attackSpeed, int maxNumberOfAttack, IAttribute stamina, MonoBehaviour coroutineRunner)
         {
             throw new System.NotImplementedException();
         }

@@ -24,7 +24,7 @@ namespace RPG.Combat
 
         private void Start()
         {
-            _behaviour.Init(timeBetweenAttacks,attackSpeed,maxNumberOfAttack, _anim, _stamina, this);
+            _behaviour.Init(timeBetweenAttacks,attackSpeed,maxNumberOfAttack, _stamina, this);
         }
 
         private void Update()

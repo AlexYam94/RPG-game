@@ -20,19 +20,19 @@ namespace RPG.Combat
         int _tempMaxNumberOfAttack = 1;
         Vector3 _shootDirection;
         IAttribute _stamina;
-        MonoBehaviour _coroutineRunner;
+        MonoBehaviour _monoBehaviour;
         bool _startAttack = false;
 
         Animator IAttackControllerBehaviour.anim { get => _anim; set => _anim = value; }
 
-        public void Init(float timeBetweenAttacks, float attackSpeed, int maxNumberOfAttack, Animator anim, IAttribute stamina, MonoBehaviour coroutineRunner)
+        public void Init(float timeBetweenAttacks, float attackSpeed, int maxNumberOfAttack, IAttribute stamina, MonoBehaviour monoBehaviour)
         {
             _timeBetweenAttacks = timeBetweenAttacks;
             _attackSpeed = attackSpeed;
             _maxNumberOfAttack = maxNumberOfAttack;
-            _anim = anim;
             _stamina = stamina;
-            _coroutineRunner = coroutineRunner;
+            _monoBehaviour = monoBehaviour;
+            _anim = monoBehaviour.GetComponent<Animator>();
         }
 
         public void CheckAttackInput()
@@ -68,7 +68,7 @@ namespace RPG.Combat
         private void AttackBehaviour()
         {
                 _numberOfAttack = Mathf.Clamp(_numberOfAttack + 1, 1, _maxNumberOfAttack);
-            _coroutineRunner.StartCoroutine(TriggerAttackAnimation());
+            _monoBehaviour.StartCoroutine(TriggerAttackAnimation());
         }
 
         private IEnumerator TriggerAttackAnimation()

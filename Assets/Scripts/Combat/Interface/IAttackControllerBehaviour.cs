@@ -8,10 +8,10 @@ namespace RPG.Combat
     {
         Animator anim { get; set; }
 
-        public void Init(float timeBetweenAttacks, float attackSpeed, int maxNumberOfAttack, Animator anim, IAttribute stamina, MonoBehaviour coroutineRunner);
+        void Init(float timeBetweenAttacks, float attackSpeed, int maxNumberOfAttack, IAttribute stamina, MonoBehaviour coroutineRunner);
 
-        public void CheckAttackInput();
+        void CheckAttackInput();
 
-        public void Attack();
+        void Attack();
     }
 }
