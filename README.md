@@ -1,2 +1,2 @@
-# RPG-game prototype
+# RPG-game test bed
 game development practice
